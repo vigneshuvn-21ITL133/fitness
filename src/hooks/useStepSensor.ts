@@ -1,5 +1,6 @@
 import { Pedometer } from 'expo-sensors';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { toDateKey } from '@/lib/date';
 
@@ -20,10 +21,15 @@ interface Options {
  * Reads today's steps from the device pedometer and keeps them updated while
  * the app is open. Steps are read from local midnight to now, so the count
  * resets at the local day boundary.
+ *
+ * `canAskAgain` is false once the user has denied motion access and the
+ * system will no longer show the prompt. The screen then has to send the user
+ * to system settings instead of asking again.
  */
 export function useStepSensor({ onSteps }: Options) {
   const [status, setStatus] = useState<StepSensorStatus>('checking');
   const [lastError, setLastError] = useState<string | null>(null);
+  const [canAskAgain, setCanAskAgain] = useState<boolean | null>(null);
   const onStepsRef = useRef(onSteps);
   onStepsRef.current = onSteps;
 
@@ -41,6 +47,18 @@ export function useStepSensor({ onSteps }: Options) {
     }
   }, []);
 
+  /** Checks the current permission and starts counting if it is granted. */
+  const checkPermission = useCallback(async (): Promise<boolean> => {
+    const permission = await Pedometer.getPermissionsAsync();
+    setCanAskAgain(permission.canAskAgain);
+    if (!permission.granted) {
+      setStatus((prev) => (prev === 'denied' ? 'denied' : 'permission-needed'));
+      return false;
+    }
+    await refresh();
+    return true;
+  }, [refresh]);
+
   useEffect(() => {
     let cancelled = false;
     let subscription: { remove: () => void } | null = null;
@@ -53,14 +71,8 @@ export function useStepSensor({ onSteps }: Options) {
           setStatus('unavailable');
           return;
         }
-        const permission = await Pedometer.getPermissionsAsync();
-        if (cancelled) return;
-        if (!permission.granted) {
-          setStatus('permission-needed');
-          return;
-        }
-        await refresh();
-        if (cancelled) return;
+        const granted = await checkPermission();
+        if (cancelled || !granted) return;
         subscription = Pedometer.watchStepCount(() => {
           refresh();
         });
@@ -76,11 +88,25 @@ export function useStepSensor({ onSteps }: Options) {
       cancelled = true;
       subscription?.remove();
     };
-  }, [refresh]);
+  }, [checkPermission, refresh]);
+
+  // Users often grant access in system settings and come back. Re-check then,
+  // so the screen updates without a restart.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active') return;
+      if (status !== 'permission-needed' && status !== 'denied') return;
+      checkPermission().catch(() => {
+        // Ignore: the next user action shows any error.
+      });
+    });
+    return () => sub.remove();
+  }, [status, checkPermission]);
 
   const requestPermission = useCallback(async () => {
     try {
       const response = await Pedometer.requestPermissionsAsync();
+      setCanAskAgain(response.canAskAgain);
       if (!response.granted) {
         setStatus('denied');
         return;
@@ -92,5 +118,5 @@ export function useStepSensor({ onSteps }: Options) {
     }
   }, [refresh]);
 
-  return { status, lastError, requestPermission, refresh };
+  return { status, lastError, canAskAgain, requestPermission, refresh };
 }
