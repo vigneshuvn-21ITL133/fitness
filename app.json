@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Pulse Health",
+    "slug": "pulse-health",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "pulsehealth",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "backgroundColor": "#0D0F0E",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.pulsehealth.app"
+    },
+    "android": {
+      "package": "com.pulsehealth.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D0F0E"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar"
+    ]
+  }
+}

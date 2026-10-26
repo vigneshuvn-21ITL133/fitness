@@ -1,0 +1,468 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { Card } from '@/components/Card';
+import { DonutChart } from '@/components/DonutChart';
+import { GrowthBars } from '@/components/GrowthBars';
+import { MoodFace } from '@/components/MoodFace';
+import { WeightRuler } from '@/components/WeightRuler';
+import {
+  FREUD_SCORE,
+  GROWTH,
+  HAPPY_MINUTES,
+  MOOD_SHARE,
+  USER,
+  WEIGHT,
+} from '@/data/mock';
+import { addDays, isSameDay, startOfDay, startOfWeek, WEEKDAY_SHORT } from '@/lib/date';
+import { useMoods } from '@/store/mood-store';
+import { colors, radius, spacing } from '@/theme';
+import type { MoodKey } from '@/types';
+
+/** Tap cycle for a day's mood: none → happy → sad → angry → love → okay → none. */
+const MOOD_CYCLE: (MoodKey | undefined)[] = [undefined, 'happy', 'sad', 'angry', 'love', 'neutral'];
+
+const DOT_GRID_COLUMNS = 7;
+const DOT_GRID_CELLS = 42;
+
+export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const { getMood, setMood, clearMood } = useMoods();
+  const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
+  const [notifications, setNotifications] = useState(3);
+
+  const weekDays = useMemo(() => {
+    const sunday = startOfWeek(new Date());
+    return Array.from({ length: 7 }, (_, i) => addDays(sunday, i));
+  }, []);
+
+  const cycleMood = (date: Date) => {
+    const current = getMood(date);
+    const index = MOOD_CYCLE.indexOf(current);
+    const next = MOOD_CYCLE[(index + 1) % MOOD_CYCLE.length];
+    if (next === undefined) {
+      clearMood(date);
+    } else {
+      setMood(date, next);
+    }
+  };
+
+  const freudLit = Math.round((FREUD_SCORE.value / FREUD_SCORE.max) * DOT_GRID_CELLS);
+
+  return (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{USER.initials}</Text>
+        </View>
+        <Pressable
+          accessibilityLabel={`${notifications} notifications`}
+          onPress={() => setNotifications(0)}
+          style={styles.bellButton}
+        >
+          <Ionicons name="notifications-outline" size={20} color={colors.text} />
+          {notifications > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{notifications}</Text>
+            </View>
+          )}
+        </Pressable>
+      </View>
+
+      <View style={styles.greeting}>
+        <Text style={styles.hello}>Hello, {USER.name}</Text>
+        <Text style={styles.title}>How&apos;re You Today?</Text>
+      </View>
+
+      {/* Week strip */}
+      <View style={styles.weekRow}>
+        {weekDays.map((day) => {
+          const active = isSameDay(day, selected);
+          const mood = getMood(day);
+          return (
+            <View key={day.toISOString()} style={styles.dayColumn}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${WEEKDAY_SHORT[day.getDay()]} ${day.getDate()}`}
+                onPress={() => setSelected(day)}
+                style={[styles.dayCell, active && styles.dayCellActive]}
+              >
+                <Text style={[styles.dayName, active && styles.dayNameActive]}>
+                  {WEEKDAY_SHORT[day.getDay()]}
+                </Text>
+                <Text style={[styles.dayNumber, active && styles.dayNumberActive]}>
+                  {day.getDate()}
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Mood for ${WEEKDAY_SHORT[day.getDay()]}`}
+                onPress={() => cycleMood(day)}
+                hitSlop={6}
+                style={styles.moodTap}
+              >
+                <MoodFace mood={mood} size={28} />
+              </Pressable>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Dashboard grid */}
+      <View style={styles.grid}>
+        <View style={styles.column}>
+          <Card tone="green" style={styles.freudCard}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="cloud-outline" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Freud Score</Text>
+            </View>
+            <Text style={styles.bigValue}>
+              {FREUD_SCORE.value}
+              <Text style={styles.bigValueMuted}>/{FREUD_SCORE.max}</Text>
+            </Text>
+            <View style={styles.dotGrid}>
+              {Array.from({ length: DOT_GRID_CELLS / DOT_GRID_COLUMNS }, (_, row) => (
+                <View key={row} style={styles.dotRow}>
+                  {Array.from({ length: DOT_GRID_COLUMNS }, (_, col) => {
+                    const index = row * DOT_GRID_COLUMNS + col;
+                    const lit = index < freudLit;
+                    return (
+                      <View
+                        key={col}
+                        style={[
+                          styles.dot,
+                          { backgroundColor: lit ? colors.white : 'rgba(255,255,255,0.14)' },
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          </Card>
+
+          <Card style={styles.growthCard}>
+            <View style={styles.rowBetween}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="trending-up" size={16} color={colors.text} />
+                <Text style={styles.cardTitle}>Growth</Text>
+              </View>
+              <Text style={styles.smallValue}>
+                {GROWTH.percent}
+                <Text style={styles.smallValueUnit}>%</Text>
+              </Text>
+            </View>
+            <View style={{ marginTop: spacing.md }}>
+              <GrowthBars items={GROWTH.months} />
+            </View>
+          </Card>
+        </View>
+
+        <View style={styles.column}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open health overview"
+            onPress={() => router.navigate('/stats')}
+          >
+            <Card style={styles.healthCard}>
+              <View style={styles.cardHeader}>
+                <Ionicons name="pulse-outline" size={16} color={colors.text} />
+                <Text style={styles.cardTitle}>Health overview</Text>
+              </View>
+              <View style={styles.weightRow}>
+                <Text style={styles.smallValue}>{WEIGHT.current}</Text>
+                <Text style={styles.weightUnit}>{WEIGHT.unit} weight</Text>
+              </View>
+              <WeightRuler
+                value={WEIGHT.current}
+                min={WEIGHT.rulerMin}
+                max={WEIGHT.rulerMax}
+                step={1}
+                unit={WEIGHT.unit}
+              />
+            </Card>
+          </Pressable>
+
+          <Card style={styles.moodCard}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="happy-outline" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Mood Statistic</Text>
+            </View>
+            <View style={styles.donutWrap}>
+              <DonutChart
+                size={132}
+                thickness={14}
+                segments={[
+                  { value: MOOD_SHARE.happy, color: colors.mint },
+                  { value: MOOD_SHARE.sad, color: colors.yellow },
+                  { value: MOOD_SHARE.angry, color: colors.lilac },
+                ]}
+              >
+                <View style={styles.donutCenter}>
+                  <Text style={styles.donutValue}>{HAPPY_MINUTES}</Text>
+                  <Text style={styles.donutLabel}>Happy Minutes</Text>
+                </View>
+              </DonutChart>
+            </View>
+            <View style={styles.legend}>
+              <LegendDot color={colors.mint} label={`Happy ${Math.round(MOOD_SHARE.happy * 100)}%`} />
+              <LegendDot color={colors.yellow} label={`Sad ${Math.round(MOOD_SHARE.sad * 100)}%`} />
+              <LegendDot color={colors.lilac} label={`Angry ${Math.round(MOOD_SHARE.angry * 100)}%`} />
+            </View>
+          </Card>
+        </View>
+      </View>
+    </ScrollView>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <Text style={styles.legendText}>{label}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  content: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: 120,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.cardBorder,
+  },
+  avatarText: {
+    color: colors.background,
+    fontWeight: '800',
+    fontSize: 17,
+  },
+  bellButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badge: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: colors.red,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: colors.white,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  greeting: {
+    alignItems: 'center',
+    marginTop: spacing.xxl,
+    marginBottom: spacing.xl,
+  },
+  hello: {
+    color: colors.textMuted,
+    fontSize: 15,
+  },
+  title: {
+    color: colors.text,
+    fontSize: 26,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  weekRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: spacing.xl,
+  },
+  dayColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dayCell: {
+    width: '100%',
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.cardBorder,
+  },
+  dayCellActive: {
+    backgroundColor: colors.yellow,
+    borderColor: colors.yellow,
+  },
+  dayName: {
+    color: colors.textMuted,
+    fontSize: 11,
+  },
+  dayNameActive: {
+    color: colors.background,
+    fontWeight: '600',
+  },
+  dayNumber: {
+    color: colors.text,
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  dayNumberActive: {
+    color: colors.background,
+  },
+  moodTap: {
+    marginTop: 8,
+    padding: 2,
+  },
+  grid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  column: {
+    flex: 1,
+    gap: 12,
+  },
+  freudCard: {
+    height: 232,
+  },
+  growthCard: {
+    height: 184,
+  },
+  healthCard: {
+    height: 170,
+  },
+  moodCard: {
+    height: 262,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cardTitle: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bigValue: {
+    color: colors.text,
+    fontSize: 26,
+    fontWeight: '700',
+    marginTop: spacing.md,
+  },
+  bigValueMuted: {
+    fontSize: 18,
+    color: colors.textMuted,
+    fontWeight: '500',
+  },
+  dotGrid: {
+    marginTop: spacing.lg,
+    gap: 7,
+  },
+  dotRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+  },
+  smallValue: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  smallValueUnit: {
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  weightRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: spacing.md,
+  },
+  weightUnit: {
+    color: colors.textMuted,
+    fontSize: 12,
+  },
+  donutWrap: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  donutCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  donutValue: {
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  donutLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: spacing.md,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  legendDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  legendText: {
+    color: colors.textMuted,
+    fontSize: 10,
+  },
+});
