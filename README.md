@@ -25,6 +25,16 @@ It reproduces the "How're You Today?" design: a home dashboard, a Health Overvie
 - **Settings**: clear all mood data (with confirmation) and view the app version.
 - Mood data is saved on the device with AsyncStorage and survives restarts.
 
+## Fitness tracking (issue #1)
+
+- **Fitness** dashboard (reach it from the Stats tab): steps, weight, blood pressure, BMI and quick actions.
+- **Steps**: reads the device pedometer (expo-sensors) after you allow motion access. Enter steps manually to override it or when no sensor is available.
+- **Weight** and **Blood Pressure**: add, edit and delete entries; history and trend charts.
+- **Profile**: age, height and units. BMI is shown with WHO adult categories; under-18s get guidance only.
+- **Health Benefits**: general educational content with safety text.
+
+All health data is stored only on this device, in AsyncStorage under `pulse.health.v1`. Nothing is sent to a server.
+
 ## Requirements
 
 - [Bun](https://bun.sh) 1.1 or newer

@@ -21,7 +21,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-status-bar"
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Pulse Health uses motion data to count your steps. Your step data stays on this device."
+        }
+      ]
     ]
   }
 }

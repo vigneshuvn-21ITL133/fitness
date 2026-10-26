@@ -17,7 +17,10 @@ import {
   USER,
   WEIGHT,
 } from '@/data/mock';
+import { kgToDisplay, weightUnitLabel } from '@/domain/units';
 import { addDays, isSameDay, startOfDay, startOfWeek, WEEKDAY_SHORT } from '@/lib/date';
+import { latestWeight } from '@/domain/healthState';
+import { useHealth } from '@/store/health-store';
 import { useMoods } from '@/store/mood-store';
 import { colors, radius, spacing } from '@/theme';
 import type { MoodKey } from '@/types';
@@ -31,6 +34,10 @@ const DOT_GRID_CELLS = 42;
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { getMood, setMood, clearMood } = useMoods();
+  const { state: health } = useHealth();
+  const latest = latestWeight(health.weights);
+  const displayWeightKg = latest ? latest.kg : WEIGHT.current;
+  const displayUnits = health.profile?.units ?? 'metric';
   const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
   const [notifications, setNotifications] = useState(3);
 
@@ -178,15 +185,19 @@ export default function HomeScreen() {
                 <Text style={styles.cardTitle}>Health overview</Text>
               </View>
               <View style={styles.weightRow}>
-                <Text style={styles.smallValue}>{WEIGHT.current}</Text>
-                <Text style={styles.weightUnit}>{WEIGHT.unit} weight</Text>
+                <Text style={styles.smallValue}>
+                  {kgToDisplay(displayWeightKg, displayUnits).toFixed(1)}
+                </Text>
+                <Text style={styles.weightUnit}>
+                  {weightUnitLabel(displayUnits)} weight
+                </Text>
               </View>
               <WeightRuler
-                value={WEIGHT.current}
-                min={WEIGHT.rulerMin}
-                max={WEIGHT.rulerMax}
+                value={Math.round(kgToDisplay(displayWeightKg, displayUnits))}
+                min={displayUnits === 'metric' ? WEIGHT.rulerMin : Math.round(kgToDisplay(WEIGHT.rulerMin, 'imperial'))}
+                max={displayUnits === 'metric' ? WEIGHT.rulerMax : Math.round(kgToDisplay(WEIGHT.rulerMax, 'imperial'))}
                 step={1}
-                unit={WEIGHT.unit}
+                unit={` ${weightUnitLabel(displayUnits)}`}
               />
             </Card>
           </Pressable>

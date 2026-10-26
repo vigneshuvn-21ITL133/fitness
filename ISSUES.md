@@ -1,5 +1,7 @@
 # Issues and status
 
+Tracks GitHub issue #1 (Fitness tracking, BMI and Health Benefits) and the original design review.
+
 Project: Pulse Health (Expo SDK 58, React Native, TypeScript, Bun)
 Design reference: "How're You Today?" health dashboard (home, health overview, sleep overview).
 
@@ -20,9 +22,27 @@ Design reference: "How're You Today?" health dashboard (home, health overview, s
 - [x] Type check passes (`bun run typecheck`)
 - [x] Android bundle exports cleanly (`bunx expo export --platform android`)
 
+## Issue #1: Fitness tracking, BMI and Health Benefits (implemented)
+
+- [x] Steps: device pedometer via expo-sensors with a permission prompt, manual entry fallback, manual overrides sensor, configurable goal (default 10,000), local-day reset, daily ring, 7-day history, distance and energy estimates
+- [x] Blood pressure: systolic and diastolic entry in mmHg, validation (systolic must exceed diastolic), add/edit/delete, history, trend chart, ACC/AHA categories, not-a-diagnosis note, camera measurement not included
+- [x] Weight: kg or lb, add/edit/delete, dated history, latest value, change since previous entry, trend chart, shown on the home card
+- [x] Profile and BMI: age in years, height in cm or in, units preference, automatic BMI with adult WHO categories, under-18 guidance without an adult category, BMI scale
+- [x] Health Benefits screen: educational cards with safety text and no disease-prevention claims
+- [x] Fitness dashboard: steps, weight, blood pressure, BMI, quick actions, and a link from the Stats tab
+- [x] Local-first storage in AsyncStorage (`pulse.health.v1`), separate from mock data, with malformed data dropped on load
+- [x] Unit tests: BMI, validation, step tracking, weight changes, blood pressure, units, state sanitising (60 tests)
+
+Known limits of the issue #1 work:
+- The pedometer counts steps while the app is open on Android. iOS and Android both need motion permission. Background counting is not implemented.
+- Distance and energy are estimates from height and weight.
+- Under-18 BMI is not compared with percentile charts; the screen only says to ask a clinician.
+- Age is entered in years rather than a date of birth.
+- Not yet run on a device. Android testing is still required (acceptance criterion).
+
 ## Open
 
-1. **Not verified on a device.** Nothing has been run in a simulator or on a phone. Visual match to the design is unchecked.
+1. **Not verified on a device.** This includes the new step sensor, permission flow and forms. Nothing has been run in a simulator or on a phone. Visual match to the design is unchecked.
 2. **Sample data only.** Health Overview ring values, the Week/Month/Year sleep history, and work/life hours come from `src/data/mock.ts`. There is no real data source.
 3. **Sleep ranges.** Selecting Week, Month or Year on Sleep Overview shows the same sample data with a note. Real history needs a data source.
 4. **Sleep totals differ from the design.** The stage data gives 8h 50m asleep; the design shows 7h 30m. Stage percentages are computed from the sample stages.
