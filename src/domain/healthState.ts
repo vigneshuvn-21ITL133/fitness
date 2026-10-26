@@ -135,6 +135,10 @@ export function sanitizeHealthState(raw: unknown): HealthState {
     const units = p.units === 'metric' || p.units === 'imperial' ? p.units : null;
     if (isFiniteNumber(p.age) && isFiniteNumber(p.heightCm) && units !== null) {
       profile = { age: p.age, heightCm: p.heightCm, units };
+      if (typeof p.name === 'string' && p.name.trim() !== '') profile.name = p.name.trim().slice(0, 40);
+      if (typeof p.fitnessGoal === 'string' && p.fitnessGoal.trim() !== '') {
+        profile.fitnessGoal = p.fitnessGoal.trim().slice(0, 120);
+      }
     }
   }
 

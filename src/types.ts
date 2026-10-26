@@ -26,6 +26,10 @@ export interface Profile {
   age: number;
   heightCm: number;
   units: UnitSystem;
+  /** Optional display name. */
+  name?: string;
+  /** Optional free-text fitness goal, e.g. "Walk 5 km three times a week". */
+  fitnessGoal?: string;
 }
 
 export interface WeightEntry {
@@ -59,4 +63,46 @@ export interface HealthState {
   steps: Record<string, StepDay>;
   weights: WeightEntry[];
   bloodPressure: BloodPressureEntry[];
+}
+
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  /** Epoch milliseconds. */
+  t: number;
+  /** Horizontal accuracy in metres as reported by the device. */
+  acc: number;
+}
+
+export type SessionStatus = 'active' | 'paused' | 'completed' | 'interrupted';
+
+export interface ActivitySession {
+  id: string;
+  startedAt: number;
+  endedAt: number | null;
+  status: SessionStatus;
+  /** Milliseconds of active (not paused) time already closed. */
+  activeMs: number;
+  /** Start of the current active run, or null while paused or finished. */
+  runStartedAt: number | null;
+  /** Start of the current step-counting window, or null while paused or finished. */
+  stepRunStart: number | null;
+  /** Steps from closed windows. */
+  steps: number;
+  /** Set when the user typed steps because no sensor was available. */
+  manualSteps: number | null;
+  /** Last time the session was saved while running. Used to recover after a crash. */
+  lastSeenAt: number;
+  gps: boolean;
+  route: RoutePoint[];
+  distanceM: number;
+  /** Calories estimated when the session stopped. Kept even if the profile changes later. */
+  kcal: number | null;
+  /** Body weight used for that estimate. */
+  kcalWeightKg: number | null;
+}
+
+export interface ActivityState {
+  version: 1;
+  sessions: ActivitySession[];
 }
