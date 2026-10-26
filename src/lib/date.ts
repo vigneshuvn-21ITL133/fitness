@@ -45,3 +45,14 @@ export function relativeDayLabel(date: Date, now: Date = new Date()): string {
   if (diff === 1) return 'Yesterday';
   return `${WEEKDAY_SHORT[date.getDay()]} ${date.getDate()} ${MONTH_SHORT[date.getMonth()]}`;
 }
+
+/** "26/10/2026 08:30" for history lists. Falls back to the raw string if unparseable. */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const hh = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm}/${date.getFullYear()} ${hh}:${min}`;
+}

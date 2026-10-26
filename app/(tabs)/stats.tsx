@@ -9,6 +9,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SelectMenu } from '@/components/SelectMenu';
 import { HEALTH_RINGS, HEALTH_STATS, WORK_LIFE } from '@/data/mock';
 import { addDays, formatDayMonth, startOfDay, WEEKDAY_SHORT } from '@/lib/date';
+import { useHealth } from '@/store/health-store';
 import { useMoods } from '@/store/mood-store';
 import { colors, radius, spacing } from '@/theme';
 
@@ -20,6 +21,7 @@ const RING_COLORS = [colors.mint, colors.yellow, colors.lilac] as const;
 
 export default function HealthOverviewScreen() {
   const { getMood } = useMoods();
+  const { state: health } = useHealth();
   const [moodRange, setMoodRange] = useState<MoodRange>('Week');
 
   const moodDays = useMemo(() => {
@@ -61,6 +63,24 @@ export default function HealthOverviewScreen() {
           </Pressable>
           <Stat value={`${HEALTH_STATS.meditationDays}`} unit="days" label="Meditation" color={colors.lilac} />
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open fitness tracking"
+          onPress={() => router.navigate('/fitness')}
+        >
+          <Card style={styles.sectionCard}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Fitness tracking</Text>
+              <Text style={styles.linkText}>
+                {health.profile ? 'Open' : 'Set up'}
+              </Text>
+            </View>
+            <Text style={styles.linkBody}>
+              Steps, weight, blood pressure and BMI in one place.
+            </Text>
+          </Card>
+        </Pressable>
 
         <Card style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
@@ -225,6 +245,16 @@ const styles = StyleSheet.create({
     color: colors.textFaint,
     fontSize: 10,
     marginTop: 2,
+  },
+  linkText: {
+    color: colors.yellow,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  linkBody: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginTop: spacing.xs,
   },
   staticPill: {
     backgroundColor: colors.surface,
