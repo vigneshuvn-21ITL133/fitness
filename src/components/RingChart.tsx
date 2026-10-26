@@ -1,3 +1,5 @@
+import { useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
@@ -29,6 +31,7 @@ export function RingChart({
   gap = 8,
   children,
 }: RingChartProps) {
+  useThemeVersion();
   const cx = size / 2;
   const cy = size / 2;
   const knobRadius = strokeWidth / 2 - 4;

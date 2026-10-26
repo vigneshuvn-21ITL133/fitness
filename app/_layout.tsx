@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
@@ -7,15 +9,25 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ActivityProvider, useActivity } from '@/store/activity-store';
 import { HealthProvider, useHealth } from '@/store/health-store';
 import { MoodProvider, useMoods } from '@/store/mood-store';
+import { ThemeProvider, useThemeMode } from '@/store/theme-store';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <AppShell />
+    </ThemeProvider>
+  );
+}
+
+function AppShell() {
+  const { resolved } = useThemeMode();
   return (
     <SafeAreaProvider>
       <MoodProvider>
         <HealthProvider>
           <ActivityProvider>
-            <StatusBar style="light" />
+            <StatusBar style={resolved === 'light' ? 'dark' : 'light'} />
             <AppGate>
               <Stack
                 screenOptions={{
@@ -31,6 +43,7 @@ export default function RootLayout() {
                 <Stack.Screen name="tracking" />
                 <Stack.Screen name="sessions" />
                 <Stack.Screen name="session" />
+                <Stack.Screen name="heart-rate" />
                 <Stack.Screen name="weight" />
                 <Stack.Screen name="blood-pressure" />
                 <Stack.Screen name="profile" />
@@ -46,10 +59,12 @@ export default function RootLayout() {
 
 /** Hold rendering until stored data is loaded, so screens never flash empty. */
 function AppGate({ children }: { children: React.ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   const { ready: moodsReady } = useMoods();
   const { ready: healthReady } = useHealth();
   const { ready: activityReady } = useActivity();
-  if (!moodsReady || !healthReady || !activityReady) {
+  const { ready: themeReady } = useThemeMode();
+  if (!moodsReady || !healthReady || !activityReady || !themeReady) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.mint} />
@@ -59,7 +74,7 @@ function AppGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   loading: {
     flex: 1,
     alignItems: 'center',

@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import React from 'react';
@@ -13,6 +15,7 @@ interface ScreenHeaderProps {
 }
 
 export function ScreenHeader({ title, showBack = true }: ScreenHeaderProps) {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
 
   const goBack = () => {
@@ -46,7 +49,7 @@ export function ScreenHeader({ title, showBack = true }: ScreenHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   wrap: {
     flexDirection: 'row',
     alignItems: 'center',

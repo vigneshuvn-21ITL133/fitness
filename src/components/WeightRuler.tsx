@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -13,6 +15,7 @@ interface WeightRulerProps {
 
 /** Scale of tick marks with a centre indicator, as in the "Health overview" card. */
 export function WeightRuler({ value, min, max, step = 1, unit }: WeightRulerProps) {
+  const styles = useThemedStyles(makeStyles);
   const ticks: number[] = [];
   for (let v = min; v <= max; v += step) ticks.push(v);
   const fraction = (value - min) / (max - min);
@@ -47,7 +50,7 @@ export function WeightRuler({ value, min, max, step = 1, unit }: WeightRulerProp
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   wrap: {
     height: 70,
     justifyContent: 'flex-end',

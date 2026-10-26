@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -10,6 +12,7 @@ interface CardProps {
 }
 
 export function Card({ children, style, tone = 'default' }: CardProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.base, tone === 'green' ? styles.green : styles.default, style]}>
       {children}
@@ -17,7 +20,7 @@ export function Card({ children, style, tone = 'default' }: CardProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   base: {
     borderRadius: radius.lg,
     padding: spacing.lg,

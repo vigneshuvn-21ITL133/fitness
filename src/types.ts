@@ -30,6 +30,8 @@ export interface Profile {
   name?: string;
   /** Optional free-text fitness goal, e.g. "Walk 5 km three times a week". */
   fitnessGoal?: string;
+  /** Local file URI of the profile photo, copied into app storage. */
+  avatarUri?: string;
 }
 
 export interface WeightEntry {
@@ -55,6 +57,18 @@ export interface StepDay {
   manual?: number;
 }
 
+/**
+ * A heart-rate reading. Only manual entries exist today: a phone cannot
+ * measure heart rate reliably on its own, so readings come from the user or a
+ * connected device (not yet supported).
+ */
+export interface HeartRateEntry {
+  id: string;
+  timestamp: string;
+  bpm: number;
+  source: 'manual';
+}
+
 export interface HealthState {
   version: 1;
   profile: Profile | null;
@@ -63,6 +77,7 @@ export interface HealthState {
   steps: Record<string, StepDay>;
   weights: WeightEntry[];
   bloodPressure: BloodPressureEntry[];
+  heartRate: HeartRateEntry[];
 }
 
 export interface RoutePoint {

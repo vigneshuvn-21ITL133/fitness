@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React, { useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,6 +34,7 @@ const STATUS_TEXT: Record<StepSensorStatus, string> = {
 };
 
 export default function StepsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { state, setSensor, setManual, saveStepGoal } = useHealth();
 
@@ -210,6 +213,7 @@ export default function StepsScreen() {
 }
 
 function Estimate({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.estimate}>
       <Text style={styles.estimateValue}>{value}</Text>
@@ -218,7 +222,7 @@ function Estimate({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   statusText: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },

@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
 
@@ -12,6 +14,7 @@ interface ButtonProps {
 }
 
 export function Button({ label, onPress, variant = 'primary', disabled, style }: ButtonProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
@@ -42,7 +45,7 @@ export function Button({ label, onPress, variant = 'primary', disabled, style }:
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   base: {
     paddingVertical: 14,
     paddingHorizontal: spacing.lg,
@@ -72,7 +75,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   labelPrimary: {
-    color: colors.background,
+    color: colors.onAccent,
   },
   labelDanger: {
     color: colors.red,

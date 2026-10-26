@@ -1,19 +1,27 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
+import { SegmentedControl } from '@/components/SegmentedControl';
 import { USER } from '@/data/mock';
+import { useHealth } from '@/store/health-store';
 import { useMoods } from '@/store/mood-store';
+import { THEME_MODES, useThemeMode, type ThemeMode } from '@/store/theme-store';
 import { colors, radius, spacing } from '@/theme';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export default function SettingsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { resetAll } = useMoods();
+  const { mode, setMode } = useThemeMode();
+  const { state: health } = useHealth();
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
   const confirmReset = () => {
@@ -35,12 +43,26 @@ export default function SettingsScreen() {
     >
       <Text style={styles.title}>Settings</Text>
 
+      <Text style={styles.section}>Appearance</Text>
+      <Card style={styles.group}>
+        <Text style={styles.themeHint}>Choose light, dark, or follow the device setting.</Text>
+        <SegmentedControl<ThemeMode>
+          options={THEME_MODES}
+          value={mode}
+          onChange={(next: ThemeMode) => setMode(next)}
+        />
+      </Card>
+
       <Text style={styles.section}>Profile</Text>
       <Card style={styles.group}>
         <View style={styles.profileRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{USER.initials}</Text>
-          </View>
+          {health.profile?.avatarUri ? (
+            <Image source={{ uri: health.profile.avatarUri }} style={styles.avatarImage} accessibilityLabel="Profile photo" />
+          ) : (
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{USER.initials}</Text>
+            </View>
+          )}
           <View>
             <Text style={styles.profileName}>{USER.name}</Text>
             <Text style={styles.profileSub}>Personal health profile</Text>
@@ -74,6 +96,7 @@ function Row({
   danger?: boolean;
   onPress?: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const content = (
     <View style={styles.row}>
       <Ionicons name={icon} size={18} color={danger ? colors.red : colors.textMuted} />
@@ -91,7 +114,13 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
+  avatarImage: { width: 44, height: 44, borderRadius: 22 },
+  themeHint: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginBottom: spacing.md,
+  },
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -135,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '800',
     fontSize: 18,
   },

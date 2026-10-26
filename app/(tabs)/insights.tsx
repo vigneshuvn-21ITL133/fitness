@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -27,6 +29,7 @@ interface Insight {
 const POSITIVE: MoodKey[] = ['happy', 'love'];
 
 export default function InsightsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { getMood } = useMoods();
 
@@ -108,9 +111,10 @@ export default function InsightsScreen() {
         stepGoal: health.stepGoal,
         sessions: activity.sessions,
         weights: health.weights,
+        heartRate: health.heartRate,
         now: new Date(),
       }),
-    [health.steps, health.stepGoal, health.weights, activity.sessions],
+    [health.steps, health.stepGoal, health.weights, health.heartRate, activity.sessions],
   );
   const hasWeight = latestWeight(health.weights) !== null;
 
@@ -159,7 +163,7 @@ export default function InsightsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

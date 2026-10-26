@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import { router } from 'expo-router';
 import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,7 +12,8 @@ import { RingChart } from '@/components/RingChart';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { averageBp, BP_CATEGORY_LABEL, categorizeBp } from '@/domain/bloodPressure';
 import { getBmiResult } from '@/domain/bmi';
-import { latestBloodPressure, latestWeight, weightChange } from '@/domain/healthState';
+import { latestBloodPressure, latestHeartRate, latestWeight, weightChange } from '@/domain/healthState';
+import { formatDateTime } from '@/lib/date';
 import { effectiveSteps, goalProgress } from '@/domain/steps';
 import { formatChange, formatWeight } from '@/domain/units';
 import { toDateKey } from '@/lib/date';
@@ -18,6 +21,7 @@ import { useHealth } from '@/store/health-store';
 import { colors, spacing } from '@/theme';
 
 export default function FitnessDashboardScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { state } = useHealth();
   const units = state.profile?.units ?? 'metric';
@@ -29,6 +33,7 @@ export default function FitnessDashboardScreen() {
   const latestW = latestWeight(state.weights);
   const change = weightChange(state.weights);
   const latestBp = latestBloodPressure(state.bloodPressure);
+  const latestHr = latestHeartRate(state.heartRate);
   const recentBpAvg = useMemo(
     () => averageBp(state.bloodPressure.slice(-7)),
     [state.bloodPressure],
@@ -127,6 +132,22 @@ export default function FitnessDashboardScreen() {
           </Card>
         ) : null}
 
+        <Pressable onPress={() => router.navigate('/heart-rate')} accessibilityRole="button">
+          <Card>
+            <Text style={styles.cardLabel}>Heart rate</Text>
+            {latestHr ? (
+              <>
+                <Text style={styles.midValue}>
+                  {latestHr.bpm} <Text style={styles.meta}>bpm</Text>
+                </Text>
+                <Text style={styles.meta}>{formatDateTime(latestHr.timestamp)} · Manual entry</Text>
+              </>
+            ) : (
+              <Text style={styles.meta}>No readings yet. Enter one by hand.</Text>
+            )}
+          </Card>
+        </Pressable>
+
         <Text style={styles.sectionTitle}>Quick actions</Text>
         <View style={styles.actions}>
           <Action label="Log steps" icon="footsteps-outline" onPress={() => router.navigate('/steps')} />
@@ -149,6 +170,7 @@ function Action({
   icon: React.ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.action}>
       <Ionicons name={icon} size={20} color={colors.text} />
@@ -157,7 +179,7 @@ function Action({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   prompt: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

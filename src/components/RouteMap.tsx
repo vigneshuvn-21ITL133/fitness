@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
@@ -100,6 +102,7 @@ function buildHtml(initial: MapPoint[]): string {
  * Needs internet for map tiles. Attribution is shown in the map.
  */
 export function RouteMap({ points, height = 220 }: RouteMapProps) {
+  const styles = useThemedStyles(makeStyles);
   const cleaned = useMemo(() => cleanPoints(points), [points]);
   const html = useMemo(() => buildHtml(cleaned), []); // loaded once; later updates go via injection
   const webRef = useRef<WebViewHandle>(null);
@@ -130,7 +133,7 @@ export function RouteMap({ points, height = 220 }: RouteMapProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   wrap: {
     borderRadius: radius.md,
     overflow: 'hidden',

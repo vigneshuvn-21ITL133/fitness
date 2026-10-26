@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { BottomTabBarProps } from 'expo-router/tabs';
 import React from 'react';
@@ -17,6 +19,7 @@ const ICONS: Record<string, { active: IconName; inactive: IconName }> = {
 
 /** Five-slot bar matching the design: the centre "home" slot is raised and highlighted. */
 export function TabBar({ state, descriptors, navigateToTab, insets }: BottomTabBarProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       {state.routes.map((route, index) => {
@@ -42,7 +45,7 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: BottomTabB
                 <Ionicons
                   name={focused ? icon.active : icon.inactive}
                   size={22}
-                  color={focused ? colors.background : colors.text}
+                  color={focused ? colors.onAccent : colors.text}
                 />
               </View>
             ) : (
@@ -59,7 +62,7 @@ export function TabBar({ state, descriptors, navigateToTab, insets }: BottomTabB
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   bar: {
     flexDirection: 'row',
     alignItems: 'center',

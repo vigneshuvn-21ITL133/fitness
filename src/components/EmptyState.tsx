@@ -1,9 +1,12 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing } from '@/theme';
 
 export function EmptyState({ title, body }: { title: string; body?: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>{title}</Text>
@@ -12,7 +15,7 @@ export function EmptyState({ title, body }: { title: string; body?: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   wrap: {
     alignItems: 'center',
     paddingVertical: spacing.xl,

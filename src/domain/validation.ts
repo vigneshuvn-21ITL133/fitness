@@ -10,6 +10,7 @@ export const LIMITS = {
   stepGoal: { min: 1_000, max: 100_000 },
   systolic: { min: 70, max: 260 },
   diastolic: { min: 40, max: 160 },
+  heartRate: { min: 30, max: 220 },
 } as const;
 
 /** Parses a decimal typed with either '.' or ',' as the separator. */
@@ -77,4 +78,8 @@ export function validateBloodPressure(
     return { ok: false, error: 'Systolic must be higher than diastolic.' };
   }
   return { ok: true, value: { systolic: systolic.value, diastolic: diastolic.value } };
+}
+
+export function validateHeartRate(input: string): Result<number> {
+  return checkRange('Heart rate', input, LIMITS.heartRate, true);
 }

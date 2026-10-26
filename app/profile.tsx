@@ -1,5 +1,7 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BmiScale } from '@/components/BmiScale';
@@ -11,6 +13,7 @@ import { ScreenHeader } from '@/components/ScreenHeader';
 import { SegmentedControl } from '@/components/SegmentedControl';
 import { getBmiResult } from '@/domain/bmi';
 import { latestWeight } from '@/domain/healthState';
+import { pickAvatar, removeAvatarFile } from '@/lib/avatar';
 import { CM_PER_INCH, formatHeight, formatWeight } from '@/domain/units';
 import { parseDecimal, validateAge, validateHeightCm, type Result } from '@/domain/validation';
 import { useActivity } from '@/store/activity-store';
@@ -35,6 +38,7 @@ function validateHeightInches(input: string): Result<number> {
 }
 
 export default function ProfileScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { state, saveProfile, resetHealth } = useHealth();
   const { clearAll: clearActivity } = useActivity();
@@ -50,6 +54,28 @@ export default function ProfileScreen() {
   const [goalInput, setGoalInput] = useState(profile?.fitnessGoal ?? '');
   const [errors, setErrors] = useState<{ age?: string; height?: string }>({});
   const [saved, setSaved] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  const changePhoto = async () => {
+    if (!profile) {
+      setPhotoError('Save your age and height first, then add a photo.');
+      return;
+    }
+    try {
+      const uri = await pickAvatar(profile.avatarUri);
+      if (uri) saveProfile({ ...profile, avatarUri: uri });
+      setPhotoError(null);
+    } catch {
+      setPhotoError('The photo could not be saved. Try another image.');
+    }
+  };
+
+  const removePhoto = () => {
+    if (!profile) return;
+    removeAvatarFile(profile.avatarUri);
+    const { avatarUri: _removed, ...rest } = profile;
+    saveProfile(rest);
+  };
 
   const confirmClear = () => {
     Alert.alert(
@@ -119,6 +145,27 @@ export default function ProfileScreen() {
     <View style={styles.screen}>
       <ScreenHeader title="Profile" />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
+        <Card>
+          <Text style={styles.cardTitle}>Profile photo</Text>
+          <View style={styles.photoRow}>
+            {profile?.avatarUri ? (
+              <Image source={{ uri: profile.avatarUri }} style={styles.avatarImage} accessibilityLabel="Profile photo" />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarPlaceholderText}>{profile?.name?.[0]?.toUpperCase() ?? '?'}</Text>
+              </View>
+            )}
+            <View style={styles.photoButtons}>
+              <Button label={profile?.avatarUri ? 'Change photo' : 'Choose photo'} onPress={changePhoto} />
+              {profile?.avatarUri ? (
+                <Button label="Remove photo" variant="secondary" onPress={removePhoto} />
+              ) : null}
+            </View>
+          </View>
+          {photoError ? <Text style={styles.photoError}>{photoError}</Text> : null}
+          <Text style={styles.guidance}>Stored only on this device. Nothing is uploaded.</Text>
+        </Card>
+
         <Card>
           <Text style={styles.cardTitle}>Your details</Text>
 
@@ -219,7 +266,20 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
+  photoRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, marginBottom: spacing.md },
+  photoButtons: { flex: 1, gap: spacing.sm },
+  avatarImage: { width: 72, height: 72, borderRadius: 36, backgroundColor: colors.surface },
+  avatarPlaceholder: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.mint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarPlaceholderText: { color: colors.onAccent, fontSize: 26, fontWeight: '800' },
+  photoError: { color: colors.red, fontSize: 12, marginBottom: spacing.sm },
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: spacing.md },

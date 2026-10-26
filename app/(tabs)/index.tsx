@@ -1,7 +1,9 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
@@ -37,6 +39,7 @@ const DOT_GRID_COLUMNS = 7;
 const DOT_GRID_CELLS = 42;
 
 export default function HomeScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { getMood, setMood, clearMood } = useMoods();
   const { state: health } = useHealth();
@@ -83,9 +86,13 @@ export default function HomeScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{USER.initials}</Text>
-        </View>
+        {health.profile?.avatarUri ? (
+          <Image source={{ uri: health.profile.avatarUri }} style={styles.avatarImage} accessibilityLabel="Profile photo" />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{USER.initials}</Text>
+          </View>
+        )}
         <Pressable
           accessibilityLabel={`${notifications} notifications`}
           onPress={() => setNotifications(0)}
@@ -180,7 +187,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/tracking')}
             style={styles.trackButton}
           >
-            <Ionicons name="play" size={14} color={colors.background} />
+            <Ionicons name="play" size={14} color={colors.onAccent} />
             <Text style={styles.trackButtonText}>Track a walk</Text>
           </Pressable>
         </Card>
@@ -294,11 +301,15 @@ export default function HomeScreen() {
           </Card>
         </View>
       </View>
+      <Text style={styles.sampleNote}>
+        Freud score, growth and mood statistic are sample values. Steps, walks, weight and heart rate come from your saved records.
+      </Text>
     </ScrollView>
   );
 }
 
 function SummaryStat({ value, label }: { value: string; label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.summaryStat}>
       <Text style={styles.summaryValue}>{value}</Text>
@@ -308,6 +319,7 @@ function SummaryStat({ value, label }: { value: string; label: string }) {
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -316,7 +328,9 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
+  avatarImage: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.cardBorder },
+  sampleNote: { color: colors.textFaint, fontSize: 11, lineHeight: 16, marginTop: spacing.xl, textAlign: 'center' },
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -341,7 +355,7 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   avatarText: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '800',
     fontSize: 17,
   },
@@ -414,7 +428,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   dayNameActive: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '600',
   },
   dayNumber: {
@@ -424,7 +438,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   dayNumberActive: {
-    color: colors.background,
+    color: colors.onAccent,
   },
   moodTap: {
     marginTop: 8,
@@ -586,7 +600,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.mint,
   },
   trackButtonText: {
-    color: colors.background,
+    color: colors.onAccent,
     fontSize: 13,
     fontWeight: '700',
   },

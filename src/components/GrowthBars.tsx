@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -11,6 +13,7 @@ interface GrowthBarsProps {
 
 /** Vertical month bars on a dim track, as in the "Growth" card. */
 export function GrowthBars({ items, height = 92, color = colors.lilac }: GrowthBarsProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View>
       <View style={[styles.row, { height }]}>
@@ -38,7 +41,7 @@ export function GrowthBars({ items, height = 92, color = colors.lilac }: GrowthB
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

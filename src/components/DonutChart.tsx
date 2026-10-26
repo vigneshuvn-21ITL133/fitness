@@ -1,3 +1,5 @@
+import { useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
@@ -18,6 +20,7 @@ interface DonutChartProps {
 
 /** Multi-segment donut. Segments run clockwise from 12 o'clock. */
 export function DonutChart({ size, thickness = 16, segments, children }: DonutChartProps) {
+  useThemeVersion();
   const c = size / 2;
   const r = size / 2 - thickness / 2;
   const circumference = 2 * Math.PI * r;

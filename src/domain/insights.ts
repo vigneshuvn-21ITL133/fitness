@@ -3,8 +3,9 @@
  * data source. Nothing here is medical advice.
  */
 import { sessionDayKey } from '@/domain/activity';
+import { toDateKey } from '@/lib/date';
 import { effectiveSteps, lastDays } from '@/domain/steps';
-import type { ActivitySession, StepDay, WeightEntry } from '@/types';
+import type { ActivitySession, HeartRateEntry, StepDay, WeightEntry } from '@/types';
 
 export interface Insight {
   id: string;
@@ -19,6 +20,7 @@ export interface InsightInputs {
   stepGoal: number;
   sessions: ActivitySession[];
   weights: WeightEntry[];
+  heartRate: HeartRateEntry[];
   now: Date;
 }
 
@@ -75,6 +77,30 @@ export function computeInsights(inputs: InsightInputs): Insight[] {
       title: diff >= 0 ? 'More steps than last week' : 'Fewer steps than last week',
       body: `${thisWeek.total.toLocaleString('en-US')} steps this week, ${diff >= 0 ? '+' : ''}${pct}% compared with ${lastWeek.total.toLocaleString('en-US')}.`,
       period: 'Last 7 days vs previous 7',
+    });
+  }
+
+  // Today against yesterday
+  const today = new Date(inputs.now.getFullYear(), inputs.now.getMonth(), inputs.now.getDate());
+  const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+  const todaySteps = effectiveSteps(inputs.steps[toDateKey(today)]);
+  const yesterdaySteps = effectiveSteps(inputs.steps[toDateKey(yesterday)]);
+  if (yesterdaySteps > 0 && todaySteps > 0) {
+    const diff = todaySteps - yesterdaySteps;
+    out.push({
+      id: 'today-vs-yesterday',
+      title: diff >= 0 ? 'Ahead of yesterday' : 'Behind yesterday',
+      body: `${todaySteps.toLocaleString('en-US')} steps so far today, ${diff >= 0 ? '+' : ''}${diff.toLocaleString('en-US')} compared with ${yesterdaySteps.toLocaleString('en-US')} yesterday.`,
+      period: 'Today vs yesterday',
+    });
+  } else {
+    out.push({
+      id: 'today-vs-yesterday',
+      title: 'Today vs yesterday',
+      body: yesterdaySteps > 0
+        ? 'Log steps today to compare them with yesterday.'
+        : 'Log steps on two days in a row to compare them.',
+      period: 'Today vs yesterday',
     });
   }
 
@@ -149,6 +175,36 @@ export function computeInsights(inputs: InsightInputs): Insight[] {
       title: 'Weight trend',
       body: 'Add at least two weight entries in 30 days to see a trend.',
       period: 'Last 30 days',
+    });
+  }
+
+  // Heart-rate trend, only from real readings
+  const weekMs = 7 * 86_400_000;
+  const nowMs = inputs.now.getTime();
+  const hrThis = inputs.heartRate.filter((h) => {
+    const t = new Date(h.timestamp).getTime();
+    return t > nowMs - weekMs && t <= nowMs;
+  });
+  const hrPrev = inputs.heartRate.filter((h) => {
+    const t = new Date(h.timestamp).getTime();
+    return t > nowMs - 2 * weekMs && t <= nowMs - weekMs;
+  });
+  if (hrThis.length >= MIN_WEEK_DAYS_WITH_DATA && hrPrev.length >= MIN_WEEK_DAYS_WITH_DATA) {
+    const avgThis = hrThis.reduce((sum, h) => sum + h.bpm, 0) / hrThis.length;
+    const avgPrev = hrPrev.reduce((sum, h) => sum + h.bpm, 0) / hrPrev.length;
+    const diff = Math.round(avgThis - avgPrev);
+    out.push({
+      id: 'hr-trend',
+      title: diff === 0 ? 'Heart rate steady' : diff < 0 ? 'Average heart rate is lower' : 'Average heart rate is higher',
+      body: `Manual readings average ${Math.round(avgThis)} bpm this week and ${Math.round(avgPrev)} bpm last week. Readings are not a diagnosis.`,
+      period: 'Last 7 days vs previous 7 (manual readings)',
+    });
+  } else {
+    out.push({
+      id: 'hr-trend',
+      title: 'Heart-rate trend',
+      body: `Add at least ${MIN_WEEK_DAYS_WITH_DATA} manual readings in each of the last two weeks to see a trend.`,
+      period: 'Last 7 days vs previous 7 (manual readings)',
     });
   }
 

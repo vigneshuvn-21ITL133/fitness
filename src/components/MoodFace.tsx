@@ -1,3 +1,5 @@
+import { useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import Svg, { Circle, Path } from 'react-native-svg';
 
@@ -11,19 +13,23 @@ interface MoodFaceProps {
 
 const INK = '#0D0F0E';
 
-const FILL: Record<MoodKey, string> = {
-  happy: colors.mint,
-  sad: colors.yellow,
-  angry: colors.orange,
-  love: colors.lilac,
-  neutral: colors.surface,
-};
+/** Read at render time so the faces follow the active theme. */
+function fillColors(): Record<MoodKey, string> {
+  return {
+    happy: colors.mint,
+    sad: colors.yellow,
+    angry: colors.orange,
+    love: colors.lilac,
+    neutral: colors.surface,
+  };
+}
 
 /**
  * Emoji-style mood face drawn with SVG so it looks identical on iOS and
  * Android. Without a mood it renders the faint outline face from the design.
  */
 export function MoodFace({ mood, size = 30 }: MoodFaceProps) {
+  useThemeVersion();
   if (!mood) {
     return (
       <Svg width={size} height={size} viewBox="0 0 32 32">
@@ -37,7 +43,7 @@ export function MoodFace({ mood, size = 30 }: MoodFaceProps) {
 
   return (
     <Svg width={size} height={size} viewBox="0 0 32 32">
-      <Circle cx={16} cy={16} r={15} fill={FILL[mood]} />
+      <Circle cx={16} cy={16} r={15} fill={fillColors()[mood]} />
       {mood === 'happy' && (
         <>
           <Path d="M9.5 13.5 q2.5 -3 5 0" stroke={INK} strokeWidth={1.8} fill="none" strokeLinecap="round" />

@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -14,6 +16,7 @@ const SEGMENTS = [
 
 /** Horizontal BMI scale with a marker at the user's value. */
 export function BmiScale({ bmi }: { bmi: number }) {
+  const styles = useThemedStyles(makeStyles);
   const clamped = Math.min(Math.max(bmi, MIN), MAX);
   const markerPct = ((clamped - MIN) / (MAX - MIN)) * 100;
 
@@ -39,7 +42,7 @@ export function BmiScale({ bmi }: { bmi: number }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   track: {
     flexDirection: 'row',
     height: 12,
