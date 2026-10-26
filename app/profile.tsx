@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BmiScale } from '@/components/BmiScale';
@@ -13,6 +13,7 @@ import { getBmiResult } from '@/domain/bmi';
 import { latestWeight } from '@/domain/healthState';
 import { CM_PER_INCH, formatHeight, formatWeight } from '@/domain/units';
 import { parseDecimal, validateAge, validateHeightCm, type Result } from '@/domain/validation';
+import { useActivity } from '@/store/activity-store';
 import { useHealth } from '@/store/health-store';
 import { colors, spacing } from '@/theme';
 import type { UnitSystem } from '@/types';
@@ -35,7 +36,8 @@ function validateHeightInches(input: string): Result<number> {
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const { state, saveProfile } = useHealth();
+  const { state, saveProfile, resetHealth } = useHealth();
+  const { clearAll: clearActivity } = useActivity();
   const profile = state.profile;
   const latest = latestWeight(state.weights);
 
@@ -44,8 +46,33 @@ export default function ProfileScreen() {
   const [heightInput, setHeightInput] = useState(
     profile ? heightForInput(profile.heightCm, profile.units) : '',
   );
+  const [nameInput, setNameInput] = useState(profile?.name ?? '');
+  const [goalInput, setGoalInput] = useState(profile?.fitnessGoal ?? '');
   const [errors, setErrors] = useState<{ age?: string; height?: string }>({});
   const [saved, setSaved] = useState(false);
+
+  const confirmClear = () => {
+    Alert.alert(
+      'Clear all personal data?',
+      'This deletes your profile, weight and blood pressure entries, steps, goals, and every walk on this device. It cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear data',
+          style: 'destructive',
+          onPress: () => {
+            resetHealth();
+            clearActivity();
+            setNameInput('');
+            setGoalInput('');
+            setAgeInput('');
+            setHeightInput('');
+            setSaved(false);
+          },
+        },
+      ],
+    );
+  };
 
   const bmi = useMemo(() => {
     if (!profile || !latest) return null;
@@ -76,7 +103,15 @@ export default function ProfileScreen() {
     setErrors(nextErrors);
     if (!age.ok || !heightAsCm.ok) return;
 
-    saveProfile({ age: age.value, heightCm: heightAsCm.value, units });
+    const name = nameInput.trim();
+    const goal = goalInput.trim();
+    saveProfile({
+      age: age.value,
+      heightCm: heightAsCm.value,
+      units,
+      ...(name ? { name: name.slice(0, 40) } : {}),
+      ...(goal ? { fitnessGoal: goal.slice(0, 120) } : {}),
+    });
     setSaved(true);
   };
 
@@ -86,6 +121,27 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
         <Card>
           <Text style={styles.cardTitle}>Your details</Text>
+
+          <FormField
+            label="Name (optional)"
+            value={nameInput}
+            onChangeText={(t) => {
+              setNameInput(t);
+              setSaved(false);
+            }}
+            placeholder="e.g. Alex"
+            keyboardType="default"
+          />
+          <FormField
+            label="Fitness goal (optional)"
+            value={goalInput}
+            onChangeText={(t) => {
+              setGoalInput(t);
+              setSaved(false);
+            }}
+            placeholder="e.g. Walk 5 km three times a week"
+            keyboardType="default"
+          />
 
           <Text style={styles.label}>Units</Text>
           <View style={{ marginBottom: spacing.lg }}>
@@ -142,6 +198,16 @@ export default function ProfileScreen() {
               <Text style={styles.guidance}>{bmi.guidance}</Text>
             </View>
           ) : null}
+        </Card>
+
+        <Card>
+          <Text style={styles.cardTitle}>Privacy</Text>
+          <Text style={styles.guidance}>
+            All health and walk data stays on this device. Nothing is uploaded or shared by the app.
+          </Text>
+          <View style={{ marginTop: spacing.md }}>
+            <Button label="Clear personal data" variant="danger" onPress={confirmClear} />
+          </View>
         </Card>
 
         <Text style={styles.disclaimer}>

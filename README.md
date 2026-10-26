@@ -85,3 +85,13 @@ src/
 - Charts use `react-native-svg`, so they render the same on iOS and Android.
 - Health Overview values and the Sleep Overview history (Week / Month / Year) are sample data from `src/data/mock.ts`. Connect a real data source by replacing that file.
 - The app is portrait-only and targets phones.
+
+## Fitness tracking and walks
+
+- **Tracking** (`app/tracking.tsx`): start a walk, pause, resume and finish it. Steps come from the device pedometer; use manual entry when the sensor is unavailable.
+- **GPS route** (optional, per walk): location is read only while the app is open and the walk is running. The route is drawn on an OpenStreetMap-based map. Background location is not used.
+- **Walks** (`app/sessions.tsx`, `app/session.tsx`): history, details, manual step counts and deletion.
+- **Insights**: fitness insights come from your steps, walks and weight entries, and each one states its period.
+- **Privacy**: all data is stored on this device. Profile → "Clear personal data" removes health and walk data.
+- The calorie figures are estimates, not measurements.
+- Device testing (permissions, sensor, GPS, map) is still needed.
