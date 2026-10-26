@@ -16,7 +16,7 @@ const ICONS: Record<string, { active: IconName; inactive: IconName }> = {
 };
 
 /** Five-slot bar matching the design: the centre "home" slot is raised and highlighted. */
-export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
+export function TabBar({ state, descriptors, navigateToTab, insets }: BottomTabBarProps) {
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
       {state.routes.map((route, index) => {
@@ -33,7 +33,7 @@ export function TabBar({ state, descriptors, navigation, insets }: BottomTabBarP
             accessibilityState={{ selected: focused }}
             accessibilityLabel={label}
             onPress={() => {
-              if (!focused) navigation.navigate(route.name);
+              if (!focused) navigateToTab(route.key);
             }}
             style={styles.item}
           >

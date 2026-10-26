@@ -1,6 +1,6 @@
 # Pulse Health
 
-A mobile health and wellness app built with **Expo (SDK 57)**, **React Native**, **TypeScript** and **Bun**.
+A mobile health and wellness app built with **Expo (SDK 58)**, **React Native**, **TypeScript** and **Bun**.
 It reproduces the "How're You Today?" design: a home dashboard, a Health Overview screen, and a Sleep Overview screen.
 
 ## Features

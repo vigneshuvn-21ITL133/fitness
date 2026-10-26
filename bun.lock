@@ -5,31 +5,28 @@
     "": {
       "name": "pulse-health",
       "dependencies": {
-        "58": "^1.0.0",
         "@expo/vector-icons": "^15.1.1",
         "@react-native-async-storage/async-storage": "2.2.0",
-        "expo": "^58.0.0",
+        "expo": "~58.0.19",
         "expo-constants": "~58.0.13",
-        "expo-linking": "~58.0.14",
+        "expo-linking": "^58.0.14",
         "expo-router": "~58.0.26",
         "expo-status-bar": "~58.0.4",
         "react": "19.3.0",
         "react-native": "0.88.0",
-        "react-native-safe-area-context": "~5.10.1",
+        "react-native-safe-area-context": "^5.10.1",
         "react-native-screens": "~4.30.0",
         "react-native-svg": "15.16.0",
       },
       "devDependencies": {
         "@types/bun": "^1.4.4",
         "@types/react": "~19.3.0",
-        "typescript": "~6.0.3",
+        "typescript": "~5.9.2",
       },
     },
   },
   "packages": {
     "2g": ["2g@1.0.1", "", { "peerDependencies": { "typescript": ">=5.8.0" }, "optionalPeers": ["typescript"], "bin": { "2g": "bin/cli.js" } }, "sha512-+uViadKOS/wwR4pFu5g8TPn3QHpKqoX19JHCnp8k/3cLpImdcXozwvZA6Q/5PeW3AcU8neL8faaMidBcv7o8CA=="],
-
-    "58": ["58@1.0.0", "", {}, "sha512-cR+x8KUMKXSzFaTM9uxcw8sOPGK7mH14T8lzMEwof0DH95dzfZma0dJzgV0HxNxRmx7BLoCRmGH04GdXbEG4cQ=="],
 
     "@babel/code-frame": ["@babel/code-frame@7.29.7", "", { "dependencies": { "@babel/helper-validator-identifier": "^7.29.7", "js-tokens": "^4.0.0", "picocolors": "^1.1.1" } }, "sha512-Aup7aUOfpbAUg2ROOJN6Iw5f9DMBlzu0mIkm/malLQFN/YQgO48wCj0Kxa3sEHJvPVFg7siR+qRInwXd2qhQKw=="],
 
@@ -955,7 +952,7 @@
 
     "type-fest": ["type-fest@0.7.1", "", {}, "sha512-Ne2YiiGN8bmrmJJEuTWTLJR32nh/JdL1+PSicowtNb0WFpn59GK8/lfD61bVtzguz7b3PBt74nxpv/Pw5po5Rg=="],
 
-    "typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
+    "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
     "undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
 
