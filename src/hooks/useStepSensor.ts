@@ -52,7 +52,8 @@ export function useStepSensor({ onSteps }: Options) {
     const permission = await Pedometer.getPermissionsAsync();
     setCanAskAgain(permission.canAskAgain);
     if (!permission.granted) {
-      setStatus((prev) => (prev === 'denied' ? 'denied' : 'permission-needed'));
+      // Denied with no further prompt means the screen must send the user to settings.
+      setStatus(permission.canAskAgain === false ? 'denied' : 'permission-needed');
       return false;
     }
     await refresh();
