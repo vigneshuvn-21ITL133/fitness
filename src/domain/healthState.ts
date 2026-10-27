@@ -206,7 +206,7 @@ export function sanitizeHealthState(raw: unknown): HealthState {
           typeof h.id === 'string' &&
           typeof h.timestamp === 'string' &&
           isFiniteNumber(h.bpm) &&
-          h.source === 'manual',
+          (h.source === 'manual' || h.source === 'tap'),
       )
     : [];
 

@@ -58,15 +58,17 @@ export interface StepDay {
 }
 
 /**
- * A heart-rate reading. Only manual entries exist today: a phone cannot
- * measure heart rate reliably on its own, so readings come from the user or a
- * connected device (not yet supported).
+ * How a heart-rate reading was obtained. 'manual' is typed by the user.
+ * 'tap' is a count of the user's taps over 15 seconds, scaled to bpm. It is
+ * not a sensor reading. A connected device is not yet supported.
  */
+export type HeartRateSource = 'manual' | 'tap';
+
 export interface HeartRateEntry {
   id: string;
   timestamp: string;
   bpm: number;
-  source: 'manual';
+  source: HeartRateSource;
 }
 
 export interface HealthState {

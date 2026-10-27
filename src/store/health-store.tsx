@@ -17,7 +17,14 @@ import {
   updateBloodPressure,
   updateWeight,
 } from '@/domain/healthState';
-import type { BloodPressureEntry, HealthState, HeartRateEntry, Profile, WeightEntry } from '@/types';
+import type {
+  BloodPressureEntry,
+  HealthState,
+  HeartRateEntry,
+  HeartRateSource,
+  Profile,
+  WeightEntry,
+} from '@/types';
 
 const STORAGE_KEY = 'pulse.health.v1';
 
@@ -36,7 +43,7 @@ interface HealthContextValue {
   addBpEntry: (systolic: number, diastolic: number, timestamp?: string) => void;
   editBpEntry: (id: string, systolic: number, diastolic: number) => void;
   removeBpEntry: (id: string) => void;
-  addHrEntry: (bpm: number, timestamp?: string) => void;
+  addHrEntry: (bpm: number, timestamp?: string, source?: HeartRateSource) => void;
   removeHrEntry: (id: string) => void;
   resetHealth: () => void;
 }
@@ -106,8 +113,8 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       editBpEntry: (id, systolic, diastolic) =>
         apply((s) => updateBloodPressure(s, id, systolic, diastolic)),
       removeBpEntry: (id) => apply((s) => deleteBloodPressure(s, id)),
-      addHrEntry: (bpm, timestamp = new Date().toISOString()) => {
-        const entry: HeartRateEntry = { id: newId(), timestamp, bpm, source: 'manual' };
+      addHrEntry: (bpm, timestamp = new Date().toISOString(), source = 'manual') => {
+        const entry: HeartRateEntry = { id: newId(), timestamp, bpm, source };
         apply((s) => addHeartRate(s, entry));
       },
       removeHrEntry: (id) => apply((s) => deleteHeartRate(s, id)),

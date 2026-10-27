@@ -85,3 +85,15 @@ Known limits of the issue #3 work:
 - Connect a real data source (HealthKit / Health Connect or a backend) and replace `src/data/mock.ts`.
 - Add an app icon and splash screen.
 - Run on iOS and Android, then compare screen by screen against the design.
+
+## Heart-rate tap count (implemented)
+
+- [x] Heart rate screen (`app/heart-rate.tsx`): "Count by tapping" starts a 15-second window; each tap counts one beat; BPM = taps × 60 / 15 (`src/domain/heartTap.ts`)
+- [x] Tap readings are saved with source `tap` and labelled "Tap count" in the latest reading and history; typed readings stay "Manual entry"
+- [x] Labelled as a count of taps, not a sensor reading; the sensor-free limit is stated on the screen
+- [x] Tap counts outside 30–220 bpm are refused with a message
+- [x] Unit tests: tap-to-bpm scaling, rounding, invalid counts, range checks
+
+Known limits of the tap count:
+- Accuracy depends on the user tapping each beat; it is not a sensor reading.
+- Finger-sensor (camera) measurement is not implemented.

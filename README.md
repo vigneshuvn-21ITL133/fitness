@@ -25,6 +25,10 @@ It reproduces the "How're You Today?" design: a home dashboard, a Health Overvie
 - **Settings**: clear all mood data (with confirmation) and view the app version.
 - Mood data is saved on the device with AsyncStorage and survives restarts.
 
+## Heart rate
+
+- **Heart rate** screen: type a reading by hand, or press "Start 15-second count" and tap once per beat. The tap count is scaled to bpm (taps × 4) and labelled as a tap count, not a sensor reading. No heart-rate sensor is connected.
+
 ## Fitness tracking (issue #1)
 
 - **Fitness** dashboard (reach it from the Stats tab): steps, weight, blood pressure, BMI and quick actions.

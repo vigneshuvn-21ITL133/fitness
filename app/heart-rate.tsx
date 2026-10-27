@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,11 +9,20 @@ import { EmptyState } from '@/components/EmptyState';
 import { FormField } from '@/components/FormField';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { latestHeartRate, sortedHeartRate } from '@/domain/healthState';
+import { TAP_WINDOW_SECONDS, tapsToBpm, validateTapCount } from '@/domain/heartTap';
 import { formatDateTime } from '@/lib/date';
 import { validateHeartRate } from '@/domain/validation';
 import { useHealth } from '@/store/health-store';
 import { useThemedStyles } from '@/store/theme-store';
+import type { HeartRateSource } from '@/types';
 import { colors, spacing, type Palette } from '@/theme';
+
+type TapPhase = 'idle' | 'counting' | 'done';
+
+const SOURCE_LABEL: Record<HeartRateSource, string> = {
+  manual: 'Manual entry',
+  tap: 'Tap count',
+};
 
 export default function HeartRateScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -21,6 +30,28 @@ export default function HeartRateScreen() {
   const { state, addHrEntry, removeHrEntry } = useHealth();
   const [bpmInput, setBpmInput] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  const [phase, setPhase] = useState<TapPhase>('idle');
+  const [taps, setTaps] = useState(0);
+  const [secondsLeft, setSecondsLeft] = useState(TAP_WINDOW_SECONDS);
+  const [tapError, setTapError] = useState<string | null>(null);
+  const startedAt = useRef(0);
+
+  // Counts down from the moment the user starts. Time is read from the clock,
+  // not counted by ticks, so the window stays 15 seconds even if a tick is late.
+  useEffect(() => {
+    if (phase !== 'counting') return;
+    const id = setInterval(() => {
+      const elapsed = (Date.now() - startedAt.current) / 1000;
+      if (elapsed >= TAP_WINDOW_SECONDS) {
+        setSecondsLeft(0);
+        setPhase('done');
+        return;
+      }
+      setSecondsLeft(Math.ceil(TAP_WINDOW_SECONDS - elapsed));
+    }, 200);
+    return () => clearInterval(id);
+  }, [phase]);
 
   const latest = latestHeartRate(state.heartRate);
   const history = sortedHeartRate(state.heartRate).reverse();
@@ -31,9 +62,34 @@ export default function HeartRateScreen() {
       setError(result.error);
       return;
     }
-    addHrEntry(result.value);
+    addHrEntry(result.value, undefined, 'manual');
     setBpmInput('');
     setError(null);
+  };
+
+  const startTapCount = () => {
+    setTaps(0);
+    setSecondsLeft(TAP_WINDOW_SECONDS);
+    setTapError(null);
+    startedAt.current = Date.now();
+    setPhase('counting');
+  };
+
+  const tap = () => {
+    if (phase !== 'counting') return;
+    setTaps((t) => t + 1);
+  };
+
+  const saveTapCount = () => {
+    const result = validateTapCount(taps);
+    if (!result.ok) {
+      setTapError(result.error);
+      return;
+    }
+    addHrEntry(result.value, undefined, 'tap');
+    setPhase('idle');
+    setTaps(0);
+    setTapError(null);
   };
 
   const confirmRemove = (id: string) => {
@@ -43,6 +99,8 @@ export default function HeartRateScreen() {
     ]);
   };
 
+  const tapBpm = tapsToBpm(taps);
+
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Heart rate" />
@@ -51,9 +109,9 @@ export default function HeartRateScreen() {
           <View style={styles.noticeRow}>
             <Ionicons name="information-circle-outline" size={18} color={colors.mint} />
             <Text style={styles.notice}>
-              Readings here are entered by hand. A phone cannot measure heart rate reliably on its own, and no
-              wearable or heart-rate sensor is connected yet. Each reading is labelled as manual. This is not a
-              diagnosis. Speak to a clinician about any concerns.
+              No heart-rate sensor is connected, and a phone cannot measure heart rate reliably on its own. Readings
+              are either typed in by hand or counted by tapping along to your pulse. Each reading is labelled with
+              how it was obtained. This is not a diagnosis. Speak to a clinician about any concerns.
             </Text>
           </View>
         </Card>
@@ -67,12 +125,63 @@ export default function HeartRateScreen() {
                 <Text style={styles.unit}> bpm</Text>
               </Text>
               <Text style={styles.meta}>
-                {formatDateTime(latest.timestamp)} · Manual entry
+                {formatDateTime(latest.timestamp)} · {SOURCE_LABEL[latest.source]}
               </Text>
             </>
           ) : (
             <EmptyState title="No readings yet" body="Add a reading below to see it here." />
           )}
+        </Card>
+
+        <Card>
+          <Text style={styles.cardTitle}>Count by tapping</Text>
+          {phase === 'idle' ? (
+            <>
+              <Text style={styles.body}>
+                Press start, then tap the button once for each beat you feel for {TAP_WINDOW_SECONDS} seconds.
+              </Text>
+              <Button label={`Start ${TAP_WINDOW_SECONDS}-second count`} onPress={startTapCount} />
+            </>
+          ) : null}
+
+          {phase === 'counting' ? (
+            <>
+              <Text style={styles.bigValue}>
+                {secondsLeft}
+                <Text style={styles.unit}> s left</Text>
+              </Text>
+              <Text style={styles.meta}>{taps} taps so far</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Tap once for each beat"
+                onPress={tap}
+                style={({ pressed }) => [styles.tapButton, pressed && styles.tapButtonPressed]}
+              >
+                <Ionicons name="pulse-outline" size={36} color={colors.mint} />
+                <Text style={styles.tapLabel}>Tap for each beat</Text>
+              </Pressable>
+            </>
+          ) : null}
+
+          {phase === 'done' ? (
+            <>
+              <Text style={styles.bigValue}>
+                {tapBpm}
+                <Text style={styles.unit}> bpm</Text>
+              </Text>
+              <Text style={styles.meta}>
+                {taps} taps in {TAP_WINDOW_SECONDS} seconds × {60 / TAP_WINDOW_SECONDS} = {tapBpm} bpm
+              </Text>
+              <Text style={styles.warning}>
+                This is a count of your taps, not a sensor reading. It can be off if you missed beats or tapped
+                extra times.
+              </Text>
+              {tapError ? <Text style={styles.error}>{tapError}</Text> : null}
+              <Button label="Save tap count" onPress={saveTapCount} />
+              <View style={{ height: spacing.sm }} />
+              <Button label="Count again" variant="secondary" onPress={startTapCount} />
+            </>
+          ) : null}
         </Card>
 
         <Card>
@@ -90,7 +199,7 @@ export default function HeartRateScreen() {
             keyboardType="number-pad"
           />
           <Button label="Save reading" onPress={save} />
-          <Text style={styles.hint}>The reading is saved with the current time.</Text>
+          <Text style={styles.hint}>The reading is saved with the current time and labelled as a manual entry.</Text>
         </Card>
 
         <Text style={styles.section}>History</Text>
@@ -104,7 +213,7 @@ export default function HeartRateScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowValue}>{entry.bpm} bpm</Text>
                 <Text style={styles.meta}>
-                  {formatDateTime(entry.timestamp)} · Manual
+                  {formatDateTime(entry.timestamp)} · {SOURCE_LABEL[entry.source]}
                 </Text>
               </View>
               <Pressable
@@ -130,11 +239,27 @@ const makeStyles = (colors: Palette) =>
     noticeRow: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
     notice: { flex: 1, color: colors.textMuted, fontSize: 13, lineHeight: 19 },
     cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: spacing.md },
+    body: { color: colors.textMuted, fontSize: 14, lineHeight: 20, marginBottom: spacing.md },
     bigValue: { color: colors.text, fontSize: 36, fontWeight: '700' },
     unit: { fontSize: 16, color: colors.textMuted, fontWeight: '500' },
     meta: { color: colors.textMuted, fontSize: 12, marginTop: 4 },
+    warning: { color: colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: spacing.md },
+    error: { color: colors.red, fontSize: 12, marginTop: spacing.sm },
     hint: { color: colors.textFaint, fontSize: 12, marginTop: spacing.md, textAlign: 'center' },
     section: { color: colors.text, fontSize: 16, fontWeight: '600' },
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     rowValue: { color: colors.text, fontSize: 15, fontWeight: '600' },
+    tapButton: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.lg,
+      paddingVertical: spacing.xl,
+      borderRadius: 999,
+      borderWidth: 2,
+      borderColor: colors.mint,
+      backgroundColor: colors.card,
+    },
+    tapButtonPressed: { opacity: 0.7 },
+    tapLabel: { color: colors.text, fontSize: 15, fontWeight: '600' },
   });
