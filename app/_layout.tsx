@@ -46,7 +46,6 @@ function AppShell() {
                 <Stack.Screen name="heart-rate" />
                 <Stack.Screen name="weight" />
                 <Stack.Screen name="blood-pressure" />
-                <Stack.Screen name="profile" />
                 <Stack.Screen name="benefits" />
               </Stack>
             </AppGate>

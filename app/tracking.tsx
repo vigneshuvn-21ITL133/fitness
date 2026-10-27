@@ -2,7 +2,7 @@ import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
 import type { Palette } from '@/theme';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
@@ -10,7 +10,13 @@ import { Card } from '@/components/Card';
 import { FormField } from '@/components/FormField';
 import { RouteMap } from '@/components/RouteMap';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { activeMsNow, DEFAULT_WEIGHT_KG, estimateSessionKcal, paceMinPerKm } from '@/domain/activity';
+import {
+  activeMsNow,
+  DEFAULT_WEIGHT_KG,
+  estimateSessionKcal,
+  MAX_ACCURACY_M,
+  paceMinPerKm,
+} from '@/domain/activity';
 import { latestWeight } from '@/domain/healthState';
 import { formatClock, formatDuration, formatKm, formatPace } from '@/domain/format';
 import { useLocationRoute, type LocationStatus } from '@/hooks/useLocationRoute';
@@ -130,6 +136,19 @@ export default function TrackingScreen() {
     ]);
   };
 
+  // Once denied with "don't ask again", the system shows no prompt, so send the
+  // user to app settings instead.
+  const needsSettings = sensor.status === 'denied' && sensor.canAskAgain === false;
+  const onAllowPress = () => {
+    if (needsSettings) {
+      Linking.openSettings().catch(() => {
+        // Some devices cannot open the settings page; nothing else to do.
+      });
+      return;
+    }
+    sensor.requestPermission();
+  };
+
   return (
     <View style={styles.screen}>
       <ScreenHeader title="Tracking" />
@@ -153,7 +172,10 @@ export default function TrackingScreen() {
           ) : null}
           {sensor.status === 'permission-needed' || sensor.status === 'denied' ? (
             <View style={{ marginTop: spacing.md }}>
-              <Button label="Allow motion access" onPress={sensor.requestPermission} />
+              <Button
+                label={needsSettings ? 'Open app settings' : 'Allow motion access'}
+                onPress={onAllowPress}
+              />
             </View>
           ) : null}
         </Card>
@@ -206,7 +228,16 @@ export default function TrackingScreen() {
             </Card>
 
             {active.gps ? (
-              <RouteMap points={active.route.map((p) => ({ lat: p.lat, lng: p.lng }))} height={240} />
+              <>
+                <RouteMap points={active.route.map((p) => ({ lat: p.lat, lng: p.lng }))} height={240} />
+                {active.route.length === 0 && location.status === 'recording' ? (
+                  <Text style={styles.explain}>
+                    Waiting for a GPS fix. Current accuracy:{' '}
+                    {location.lastAccuracy !== null ? `${Math.round(location.lastAccuracy)} m` : 'not known yet'}.
+                    Points are kept only when accuracy is {MAX_ACCURACY_M} m or better, so an open outdoor spot works best.
+                  </Text>
+                ) : null}
+              </>
             ) : null}
 
             <View style={styles.controls}>

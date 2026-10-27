@@ -117,7 +117,11 @@ export default function SessionDetailScreen() {
               {session.route.length} location points kept after filtering out weak or jumping GPS readings.
             </Text>
           </View>
-        ) : null}
+        ) : (
+          <Text style={styles.explain}>
+            GPS was off for this walk, so there is no route map. Steps and time are still saved.
+          </Text>
+        )}
 
         <Card>
           <Text style={styles.cardTitle}>Steps for this walk</Text>

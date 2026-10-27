@@ -47,10 +47,10 @@ export default function FitnessDashboardScreen() {
       <ScreenHeader title="Fitness" />
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}>
         {!state.profile ? (
-          <Pressable onPress={() => router.navigate('/profile')} accessibilityRole="button">
+          <Pressable onPress={() => router.navigate('/settings')} accessibilityRole="button">
             <Card style={styles.prompt}>
               <Ionicons name="person-circle-outline" size={22} color={colors.yellow} />
-              <Text style={styles.promptText}>Set up your profile to see BMI and personal estimates.</Text>
+              <Text style={styles.promptText}>Add your details in Settings to see BMI and personal estimates.</Text>
             </Card>
           </Pressable>
         ) : null}
@@ -97,14 +97,14 @@ export default function FitnessDashboardScreen() {
           </Pressable>
         </View>
 
-        <Pressable onPress={() => router.navigate('/profile')} accessibilityRole="button">
+        <Pressable onPress={() => router.navigate('/settings')} accessibilityRole="button">
           <Card>
             <Text style={styles.cardLabel}>BMI</Text>
             {bmi ? (
               <>
                 <Text style={styles.midValue}>{bmi.bmi.toFixed(1)}</Text>
                 <Text style={styles.meta}>
-                  {bmi.kind === 'adult' ? bmi.label : 'Under 18: see guidance on Profile'}
+                  {bmi.kind === 'adult' ? bmi.label : 'Under 18: see guidance in Settings'}
                 </Text>
                 {bmi.kind === 'adult' ? (
                   <View style={{ marginTop: spacing.md }}>
@@ -153,7 +153,6 @@ export default function FitnessDashboardScreen() {
           <Action label="Log steps" icon="footsteps-outline" onPress={() => router.navigate('/steps')} />
           <Action label="Log weight" icon="scale-outline" onPress={() => router.navigate('/weight')} />
           <Action label="Log BP" icon="heart-outline" onPress={() => router.navigate('/blood-pressure')} />
-          <Action label="Profile" icon="person-outline" onPress={() => router.navigate('/profile')} />
           <Action label="Health tips" icon="book-outline" onPress={() => router.navigate('/benefits')} />
         </View>
       </ScrollView>

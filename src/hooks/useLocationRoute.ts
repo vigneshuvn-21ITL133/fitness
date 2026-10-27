@@ -19,6 +19,8 @@ interface Options {
 export function useLocationRoute({ enabled, onPoint }: Options) {
   const [status, setStatus] = useState<LocationStatus>('off');
   const [lastError, setLastError] = useState<string | null>(null);
+  /** Accuracy of the most recent reading in metres, for showing why points are not yet kept. */
+  const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
   const onPointRef = useRef(onPoint);
   onPointRef.current = onPoint;
 
@@ -58,6 +60,8 @@ export function useLocationRoute({ enabled, onPoint }: Options) {
             distanceInterval: 3,
           },
           (loc) => {
+            const acc = loc.coords.accuracy;
+            setLastAccuracy(typeof acc === 'number' && Number.isFinite(acc) ? acc : null);
             onPointRef.current({
               lat: loc.coords.latitude,
               lng: loc.coords.longitude,
@@ -89,5 +93,5 @@ export function useLocationRoute({ enabled, onPoint }: Options) {
     };
   }, [enabled, requestPermission]);
 
-  return { status, lastError, requestPermission };
+  return { status, lastError, lastAccuracy, requestPermission };
 }

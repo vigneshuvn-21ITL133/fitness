@@ -16,7 +16,6 @@ import {
   GROWTH,
   HAPPY_MINUTES,
   MOOD_SHARE,
-  USER,
   WEIGHT,
 } from '@/data/mock';
 import { kgToDisplay, weightUnitLabel } from '@/domain/units';
@@ -46,6 +45,8 @@ export default function HomeScreen() {
   const latest = latestWeight(health.weights);
   const displayWeightKg = latest ? latest.kg : WEIGHT.current;
   const displayUnits = health.profile?.units ?? 'metric';
+  const greetingName = health.profile?.name?.trim() ?? '';
+  const personalInitial = greetingName ? greetingName[0].toUpperCase() : '?';
   const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
   const [notifications, setNotifications] = useState(3);
 
@@ -90,7 +91,7 @@ export default function HomeScreen() {
           <Image source={{ uri: health.profile.avatarUri }} style={styles.avatarImage} accessibilityLabel="Profile photo" />
         ) : (
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{USER.initials}</Text>
+            <Text style={styles.avatarText}>{personalInitial}</Text>
           </View>
         )}
         <Pressable
@@ -108,7 +109,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.greeting}>
-        <Text style={styles.hello}>Hello, {USER.name}</Text>
+        <Text style={styles.hello}>{greetingName ? `Hello, ${greetingName}` : 'Hello'}</Text>
         <Text style={styles.title}>How&apos;re You Today?</Text>
       </View>
 
@@ -200,6 +201,7 @@ export default function HomeScreen() {
             <View style={styles.cardHeader}>
               <Ionicons name="cloud-outline" size={16} color={colors.text} />
               <Text style={styles.cardTitle}>Freud Score</Text>
+              <Text style={styles.sampleTag}>Sample</Text>
             </View>
             <Text style={styles.bigValue}>
               {FREUD_SCORE.value}
@@ -231,6 +233,7 @@ export default function HomeScreen() {
               <View style={styles.cardHeader}>
                 <Ionicons name="trending-up" size={16} color={colors.text} />
                 <Text style={styles.cardTitle}>Growth</Text>
+                <Text style={styles.sampleTag}>Sample</Text>
               </View>
               <Text style={styles.smallValue}>
                 {GROWTH.percent}
@@ -276,6 +279,7 @@ export default function HomeScreen() {
             <View style={styles.cardHeader}>
               <Ionicons name="happy-outline" size={16} color={colors.text} />
               <Text style={styles.cardTitle}>Mood Statistic</Text>
+              <Text style={styles.sampleTag}>Sample</Text>
             </View>
             <View style={styles.donutWrap}>
               <DonutChart
@@ -473,6 +477,14 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
     color: colors.text,
     fontSize: 13,
     fontWeight: '600',
+  },
+  sampleTag: {
+    color: colors.textFaint,
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginLeft: 'auto',
   },
   rowBetween: {
     flexDirection: 'row',
