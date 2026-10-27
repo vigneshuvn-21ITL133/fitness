@@ -138,9 +138,17 @@ export default function HeartRateScreen() {
           {phase === 'idle' ? (
             <>
               <Text style={styles.body}>
-                Press start, then tap the button once for each beat you feel for {TAP_WINDOW_SECONDS} seconds.
+                Press the fingerprint button, then tap once for each beat you feel for {TAP_WINDOW_SECONDS} seconds.
               </Text>
-              <Button label={`Start ${TAP_WINDOW_SECONDS}-second count`} onPress={startTapCount} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Press to measure heart rate for ${TAP_WINDOW_SECONDS} seconds`}
+                onPress={startTapCount}
+                style={({ pressed }) => [styles.tapButton, pressed && styles.tapButtonPressed]}
+              >
+                <Ionicons name="finger-print" size={56} color={colors.mint} />
+                <Text style={styles.tapLabel}>Press to measure for {TAP_WINDOW_SECONDS} s</Text>
+              </Pressable>
             </>
           ) : null}
 

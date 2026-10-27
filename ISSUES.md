@@ -97,3 +97,15 @@ Known limits of the issue #3 work:
 Known limits of the tap count:
 - Accuracy depends on the user tapping each beat; it is not a sensor reading.
 - Finger-sensor (camera) measurement is not implemented.
+
+## Moods from today, suggestions and health benefits (implemented)
+
+- [x] Moods start empty: the sample week is no longer seeded. Only moods the user enters are counted.
+- [x] Moods are recorded from today onwards; past days are read-only in Journal and the home week row (`canRecordMood`)
+- [x] Home Mood Statistic donut and legend are computed from logged moods (Loved counts as Happy). No sample shares.
+- [x] Insights: "Suggestions" section built on this device from steps, moods, blood pressure, heart rate and adult BMI (`src/domain/suggestions.ts`). Each has a health benefit line.
+- [x] Insights links to the Health Benefits page
+
+Known limits:
+- Suggestions are rule-based, not a generative AI model. A real AI model needs a server with its own API key, which is not in this app.
+- Past days cannot be backfilled.

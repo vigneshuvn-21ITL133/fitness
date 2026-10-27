@@ -14,10 +14,9 @@ import { WeightRuler } from '@/components/WeightRuler';
 import {
   FREUD_SCORE,
   GROWTH,
-  HAPPY_MINUTES,
-  MOOD_SHARE,
   WEIGHT,
 } from '@/data/mock';
+import { moodGroups } from '@/domain/mood';
 import { kgToDisplay, weightUnitLabel } from '@/domain/units';
 import { addDays, isSameDay, startOfDay, startOfWeek, toDateKey, WEEKDAY_SHORT } from '@/lib/date';
 import { latestWeight } from '@/domain/healthState';
@@ -40,7 +39,8 @@ const DOT_GRID_CELLS = 42;
 export default function HomeScreen() {
   const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
-  const { getMood, setMood, clearMood } = useMoods();
+  const { getMood, setMood, clearMood, moods } = useMoods();
+  const moodStats = useMemo(() => moodGroups(moods), [moods]);
   const { state: health } = useHealth();
   const latest = latestWeight(health.weights);
   const displayWeightKg = latest ? latest.kg : WEIGHT.current;
@@ -229,17 +229,15 @@ export default function HomeScreen() {
           </Card>
 
           <Card style={styles.growthCard}>
-            <View style={styles.rowBetween}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="trending-up" size={16} color={colors.text} />
-                <Text style={styles.cardTitle}>Growth</Text>
-                <Text style={styles.sampleTag}>Sample</Text>
-              </View>
-              <Text style={styles.smallValue}>
-                {GROWTH.percent}
-                <Text style={styles.smallValueUnit}>%</Text>
-              </Text>
+            <View style={styles.cardHeader}>
+              <Ionicons name="trending-up" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Growth</Text>
+              <Text style={styles.sampleTag}>Sample</Text>
             </View>
+            <Text style={[styles.smallValue, { marginTop: spacing.xs }]}>
+              {GROWTH.percent}
+              <Text style={styles.smallValueUnit}>%</Text>
+            </Text>
             <View style={{ marginTop: spacing.md }}>
               <GrowthBars items={GROWTH.months} />
             </View>
@@ -279,34 +277,39 @@ export default function HomeScreen() {
             <View style={styles.cardHeader}>
               <Ionicons name="happy-outline" size={16} color={colors.text} />
               <Text style={styles.cardTitle}>Mood Statistic</Text>
-              <Text style={styles.sampleTag}>Sample</Text>
             </View>
             <View style={styles.donutWrap}>
               <DonutChart
                 size={132}
                 thickness={14}
                 segments={[
-                  { value: MOOD_SHARE.happy, color: colors.mint },
-                  { value: MOOD_SHARE.sad, color: colors.yellow },
-                  { value: MOOD_SHARE.angry, color: colors.lilac },
+                  ...moodStats.groups.map((g) => ({ value: g.share, color: moodGroupColor(g.key) })),
                 ]}
               >
                 <View style={styles.donutCenter}>
-                  <Text style={styles.donutValue}>{HAPPY_MINUTES}</Text>
-                  <Text style={styles.donutLabel}>Happy Minutes</Text>
+                  <Text style={styles.donutValue}>{moodStats.total}</Text>
+                  <Text style={styles.donutLabel}>Days logged</Text>
                 </View>
               </DonutChart>
             </View>
             <View style={styles.legend}>
-              <LegendDot color={colors.mint} label={`Happy ${Math.round(MOOD_SHARE.happy * 100)}%`} />
-              <LegendDot color={colors.yellow} label={`Sad ${Math.round(MOOD_SHARE.sad * 100)}%`} />
-              <LegendDot color={colors.lilac} label={`Angry ${Math.round(MOOD_SHARE.angry * 100)}%`} />
+              {moodStats.groups.length === 0 ? (
+                <Text style={styles.donutLabel}>No moods yet. Tap a day below to start.</Text>
+              ) : (
+                moodStats.groups.map((g) => (
+                  <LegendDot
+                    key={g.key}
+                    color={moodGroupColor(g.key)}
+                    label={`${g.label} ${Math.round(g.share * 100)}%`}
+                  />
+                ))
+              )}
             </View>
           </Card>
         </View>
       </View>
       <Text style={styles.sampleNote}>
-        Freud score, growth and mood statistic are sample values. Steps, walks, weight and heart rate come from your saved records.
+        Freud score and growth are sample values. Steps, walks, weight, heart rate and moods come from your saved records.
       </Text>
     </ScrollView>
   );
@@ -320,6 +323,19 @@ function SummaryStat({ value, label }: { value: string; label: string }) {
       <Text style={styles.summaryLabel}>{label}</Text>
     </View>
   );
+}
+
+function moodGroupColor(key: 'happy' | 'sad' | 'angry' | 'okay'): string {
+  switch (key) {
+    case 'happy':
+      return colors.mint;
+    case 'sad':
+      return colors.yellow;
+    case 'angry':
+      return colors.lilac;
+    case 'okay':
+      return colors.textFaint;
+  }
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
@@ -470,6 +486,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 6,
   },

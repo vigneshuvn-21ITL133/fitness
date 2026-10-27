@@ -8,34 +8,24 @@ import React, {
   useState,
 } from 'react';
 
-import { addDays, startOfWeek, toDateKey } from '@/lib/date';
+import { canRecordMood, type MoodMap } from '@/domain/mood';
+import { toDateKey } from '@/lib/date';
 import type { MoodKey } from '@/types';
 
 const STORAGE_KEY = 'pulse.moods.v1';
-
-type MoodMap = Record<string, MoodKey>;
 
 interface MoodContextValue {
   ready: boolean;
   moods: MoodMap;
   getMood: (date: Date) => MoodKey | undefined;
+  /** Records a mood for today or a later day. Past days are ignored. */
   setMood: (date: Date, mood: MoodKey) => void;
+  /** Clears a mood for today or a later day. Past days are ignored. */
   clearMood: (date: Date) => void;
   resetAll: () => void;
 }
 
 const MoodContext = createContext<MoodContextValue | null>(null);
-
-/** Starter entries for the current week so a fresh install isn't empty. */
-function seedWeek(now: Date): MoodMap {
-  const sunday = startOfWeek(now);
-  const pattern: MoodKey[] = ['happy', 'sad', 'angry', 'love'];
-  const seeded: MoodMap = {};
-  pattern.forEach((mood, index) => {
-    seeded[toDateKey(addDays(sunday, index))] = mood;
-  });
-  return seeded;
-}
 
 function isMoodMap(value: unknown): value is MoodMap {
   if (typeof value !== 'object' || value === null) return false;
@@ -44,6 +34,10 @@ function isMoodMap(value: unknown): value is MoodMap {
   );
 }
 
+/**
+ * Moods start empty and are entered by hand from today onwards. Nothing is
+ * pre-filled, so the statistics only reflect what the user has recorded.
+ */
 export function MoodProvider({ children }: { children: React.ReactNode }) {
   const [moods, setMoods] = useState<MoodMap>({});
   const [ready, setReady] = useState(false);
@@ -53,11 +47,7 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw === null) {
-          const seeded = seedWeek(new Date());
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-          if (!cancelled) setMoods(seeded);
-        } else {
+        if (raw !== null) {
           const parsed: unknown = JSON.parse(raw);
           if (!cancelled) setMoods(isMoodMap(parsed) ? parsed : {});
         }
@@ -79,6 +69,7 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
 
   const setMood = useCallback(
     (date: Date, mood: MoodKey) => {
+      if (!canRecordMood(date)) return;
       setMoods((prev) => {
         const next = { ...prev, [toDateKey(date)]: mood };
         persist(next);
@@ -90,6 +81,7 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
 
   const clearMood = useCallback(
     (date: Date) => {
+      if (!canRecordMood(date)) return;
       setMoods((prev) => {
         const next = { ...prev };
         delete next[toDateKey(date)];

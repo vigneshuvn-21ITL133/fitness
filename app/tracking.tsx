@@ -233,7 +233,12 @@ export default function TrackingScreen() {
                 About {liveKcal} kcal (estimate{usingDefaultWeight ? `, ${DEFAULT_WEIGHT_KG} kg default weight` : `, ${weightKg.toFixed(1)} kg`})
               </Text>
               {location.status !== 'off' ? (
-                <Text style={styles.explain}>{LOCATION_TEXT[location.status]}</Text>
+                <>
+                  <Text style={styles.explain}>{LOCATION_TEXT[location.status]}</Text>
+                  {location.status === 'error' && location.lastError ? (
+                    <Text style={styles.explain}>{location.lastError}</Text>
+                  ) : null}
+                </>
               ) : null}
             </Card>
 
