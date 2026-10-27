@@ -119,5 +119,15 @@ export function useStepSensor({ onSteps }: Options) {
     }
   }, [refresh]);
 
-  return { status, lastError, canAskAgain, requestPermission, refresh };
+  /** Re-checks permission and reads steps again, e.g. after an error. */
+  const retry = useCallback(async () => {
+    try {
+      await checkPermission();
+    } catch (err) {
+      setStatus('error');
+      setLastError(err instanceof Error ? err.message : 'Step sensor failed.');
+    }
+  }, [checkPermission]);
+
+  return { status, lastError, canAskAgain, requestPermission, refresh, retry };
 }

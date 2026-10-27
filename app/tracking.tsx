@@ -178,6 +178,16 @@ export default function TrackingScreen() {
               />
             </View>
           ) : null}
+          {sensor.status === 'error' ? (
+            <>
+              <Text style={styles.explain}>
+                {sensor.lastError ?? 'The step sensor did not return a value.'}
+              </Text>
+              <View style={{ marginTop: spacing.md }}>
+                <Button label="Try again" variant="secondary" onPress={sensor.retry} />
+              </View>
+            </>
+          ) : null}
         </Card>
 
         {!active ? (
@@ -229,7 +239,11 @@ export default function TrackingScreen() {
 
             {active.gps ? (
               <>
-                <RouteMap points={active.route.map((p) => ({ lat: p.lat, lng: p.lng }))} height={240} />
+                <RouteMap
+                  points={active.route.map((p) => ({ lat: p.lat, lng: p.lng }))}
+                  current={location.current}
+                  height={240}
+                />
                 {active.route.length === 0 && location.status === 'recording' ? (
                   <Text style={styles.explain}>
                     Waiting for a GPS fix. Current accuracy:{' '}
