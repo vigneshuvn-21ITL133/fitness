@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
 import { MoodFace } from '@/components/MoodFace';
+import { canRecordMood } from '@/domain/mood';
 import { addDays, relativeDayLabel, startOfDay, toDateKey } from '@/lib/date';
 import { useMoods } from '@/store/mood-store';
 import { colors, radius, spacing } from '@/theme';
@@ -34,7 +35,7 @@ export default function JournalScreen() {
     >
       <Text style={styles.title}>Journal</Text>
       <Text style={styles.subtitle}>
-        {logged} of {HISTORY_DAYS} days logged. Tap a day to change how you felt.
+        {logged} of {HISTORY_DAYS} days logged. Moods are recorded by hand from today onwards; past days can't be changed.
       </Text>
 
       <View style={styles.list}>
@@ -47,6 +48,7 @@ export default function JournalScreen() {
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`${relativeDayLabel(day)} mood`}
+                disabled={!canRecordMood(day)}
                 onPress={() => setOpenKey(open ? null : key)}
                 style={styles.rowHeader}
               >

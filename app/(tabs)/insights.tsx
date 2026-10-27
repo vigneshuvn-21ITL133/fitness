@@ -1,15 +1,23 @@
 import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
 import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
 import { SLEEP_SEGMENTS, WORK_LIFE } from '@/data/mock';
+import { getBmiResult } from '@/domain/bmi';
 import { computeInsights, type Insight as FitnessInsight } from '@/domain/insights';
-import { latestWeight } from '@/domain/healthState';
-import { addDays, startOfDay, startOfWeek } from '@/lib/date';
+import {
+  latestBloodPressure,
+  latestHeartRate,
+  latestWeight,
+} from '@/domain/healthState';
+import { buildSuggestions, type Suggestion, type SuggestionKind } from '@/domain/suggestions';
+import { effectiveSteps } from '@/domain/steps';
+import { addDays, startOfDay, startOfWeek, toDateKey } from '@/lib/date';
 import { useActivity } from '@/store/activity-store';
 import { useHealth } from '@/store/health-store';
 import { useMoods } from '@/store/mood-store';
@@ -27,6 +35,14 @@ interface Insight {
 }
 
 const POSITIVE: MoodKey[] = ['happy', 'love'];
+
+const SUGGESTION_ICON: Record<SuggestionKind, IconName> = {
+  activity: 'walk-outline',
+  mood: 'happy-outline',
+  heart: 'heart-outline',
+  'blood-pressure': 'pulse-outline',
+  weight: 'scale-outline',
+};
 
 export default function InsightsScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -50,7 +66,7 @@ export default function InsightsScreen() {
         icon: 'happy-outline',
         color: colors.textMuted,
         title: 'No moods logged this week',
-        body: 'Tap a day on the home screen or pick one in Journal to start seeing trends.',
+        body: 'Tap today on the home screen or in Journal to start seeing trends.',
       });
     } else {
       const ratio = positive / weekMoods.length;
@@ -118,6 +134,34 @@ export default function InsightsScreen() {
   );
   const hasWeight = latestWeight(health.weights) !== null;
 
+  const suggestions = useMemo<Suggestion[]>(() => {
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const daysSoFar = Math.round((startOfDay(now).getTime() - weekStart.getTime()) / 86_400_000) + 1;
+    const moodsThisWeek = Array.from({ length: daysSoFar }, (_, i) => getMood(addDays(weekStart, i))).filter(
+      (m): m is MoodKey => m !== undefined,
+    );
+
+    const weight = latestWeight(health.weights);
+    const profile = health.profile;
+    const bmi =
+      weight && profile
+        ? getBmiResult(weight.kg, profile.heightCm, profile.age)
+        : null;
+
+    const bp = latestBloodPressure(health.bloodPressure);
+    const hr = latestHeartRate(health.heartRate);
+
+    return buildSuggestions({
+      stepsToday: effectiveSteps(health.steps[toDateKey(now)]),
+      stepGoal: health.stepGoal,
+      moodsThisWeek,
+      latestBp: bp ? { systolic: bp.systolic, diastolic: bp.diastolic } : null,
+      latestHeartRate: hr ? hr.bpm : null,
+      bmiCategory: bmi && bmi.kind === 'adult' ? bmi.category : null,
+    });
+  }, [health, getMood]);
+
   return (
     <ScrollView
       style={styles.screen}
@@ -140,6 +184,34 @@ export default function InsightsScreen() {
           </Card>
         ))}
       </View>
+
+      <Text style={styles.sectionTitle}>Suggestions</Text>
+      <Text style={styles.subtitle}>
+        Built on this device from your own records. Suggestions are general, not medical advice.
+      </Text>
+      <View style={styles.list}>
+        {suggestions.map((item) => (
+          <Card key={item.id} style={styles.card}>
+            <View style={[styles.iconWrap, { backgroundColor: colors.surface }]}>
+              <Ionicons name={SUGGESTION_ICON[item.kind]} size={18} color={colors.mint} />
+            </View>
+            <View style={styles.cardText}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardBody}>{item.body}</Text>
+              <Text style={styles.benefit}>Health benefit: {item.benefit}</Text>
+            </View>
+          </Card>
+        ))}
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open health benefits"
+        onPress={() => router.navigate('/benefits')}
+        style={({ pressed }) => [styles.benefitsLink, pressed && { opacity: 0.6 }]}
+      >
+        <Text style={styles.benefitsLinkText}>Read more about health benefits</Text>
+        <Ionicons name="chevron-forward" size={16} color={colors.mint} />
+      </Pressable>
 
       <Text style={styles.sectionTitle}>Fitness</Text>
       <Text style={styles.subtitle}>
@@ -211,6 +283,23 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
+  },
+  benefit: {
+    color: colors.mint,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 6,
+  },
+  benefitsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.lg,
+  },
+  benefitsLinkText: {
+    color: colors.mint,
+    fontSize: 14,
+    fontWeight: '600',
   },
   sectionTitle: {
     color: colors.text,
