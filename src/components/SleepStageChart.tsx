@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Line, Path } from 'react-native-svg';
@@ -6,11 +8,14 @@ import { colors } from '@/theme';
 import type { SleepSegment, SleepStage } from '@/types';
 
 const STAGE_LEVEL: Record<SleepStage, number> = { awake: 0, light: 1, deep: 2 };
-const STAGE_COLOR: Record<SleepStage, string> = {
-  awake: colors.mint,
-  light: colors.yellow,
-  deep: colors.lilac,
-};
+/** Read at render time so the stage colours follow the active theme. */
+function stageColors(): Record<SleepStage, string> {
+  return {
+    awake: colors.mint,
+    light: colors.yellow,
+    deep: colors.lilac,
+  };
+}
 
 /** Tick marks in minutes after the start of the night, with their labels. */
 const TICKS: { atMinute: number; label: string }[] = [
@@ -36,6 +41,7 @@ export function SleepStageChart({
   startLabel,
   endLabel,
 }: SleepStageChartProps) {
+  const styles = useThemedStyles(makeStyles);
   const pad = 6;
   const total = segments.reduce((sum, s) => sum + s.minutes, 0);
   const usable = height - pad * 2;
@@ -80,7 +86,7 @@ export function SleepStageChart({
         {drawn.map((p, index) => (
           <React.Fragment key={index}>
             {p.riser ? <Path d={p.riser} stroke={colors.textFaint} strokeWidth={2} fill="none" /> : null}
-            <Path d={p.d} stroke={STAGE_COLOR[p.stage]} strokeWidth={4} fill="none" />
+            <Path d={p.d} stroke={stageColors()[p.stage]} strokeWidth={4} fill="none" />
           </React.Fragment>
         ))}
       </Svg>
@@ -95,7 +101,7 @@ export function SleepStageChart({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   axis: {
     flexDirection: 'row',
     justifyContent: 'space-between',

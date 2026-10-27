@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -28,6 +30,7 @@ const STAGE_META: { stage: SleepStage; label: string; color: string }[] = [
 ];
 
 export default function SleepScreen() {
+  const styles = useThemedStyles(makeStyles);
   const [range, setRange] = useState<RangeKey>('Today');
   const [stageRange, setStageRange] = useState<'Today' | 'Week' | 'Month'>('Today');
 
@@ -114,6 +117,7 @@ export default function SleepScreen() {
 }
 
 function SleepStat({ value, unit, label }: { value: string; unit?: string; label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>
@@ -125,7 +129,7 @@ function SleepStat({ value, unit, label }: { value: string; unit?: string; label
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

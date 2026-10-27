@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, TextInput, View, type KeyboardTypeOptions } from 'react-native';
 
@@ -24,6 +26,7 @@ export function FormField({
   keyboardType = 'decimal-pad',
   accessibilityLabel,
 }: FormFieldProps) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{label}</Text>
@@ -44,7 +47,7 @@ export function FormField({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   wrap: {
     marginBottom: spacing.lg,
   },

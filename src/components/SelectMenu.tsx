@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -12,6 +14,7 @@ interface SelectMenuProps<T extends string> {
 
 /** Small pill that opens a bottom sheet of choices (the "Today ⌄" dropdowns). */
 export function SelectMenu<T extends string>({ value, options, onChange }: SelectMenuProps<T>) {
+  const styles = useThemedStyles(makeStyles);
   const [open, setOpen] = useState(false);
 
   return (
@@ -52,7 +55,7 @@ export function SelectMenu<T extends string>({ value, options, onChange }: Selec
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',

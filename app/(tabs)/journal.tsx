@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +14,7 @@ import { MOOD_KEYS, MOOD_LABEL, type MoodKey } from '@/types';
 const HISTORY_DAYS = 14;
 
 export default function JournalScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { getMood, setMood, clearMood } = useMoods();
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -98,7 +101,7 @@ export default function JournalScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -168,7 +171,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   optionLabelActive: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '700',
   },
   clear: {

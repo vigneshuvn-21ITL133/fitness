@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -15,6 +17,7 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
 }: SegmentedControlProps<T>) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.track}>
       {options.map((option) => {
@@ -39,7 +42,7 @@ export function SegmentedControl<T extends string>({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   track: {
     flexDirection: 'row',
     backgroundColor: colors.card,
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   labelActive: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '700',
   },
 });

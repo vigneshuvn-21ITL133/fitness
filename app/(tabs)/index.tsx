@@ -1,7 +1,9 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
@@ -14,12 +16,16 @@ import {
   GROWTH,
   HAPPY_MINUTES,
   MOOD_SHARE,
-  USER,
   WEIGHT,
 } from '@/data/mock';
 import { kgToDisplay, weightUnitLabel } from '@/domain/units';
-import { addDays, isSameDay, startOfDay, startOfWeek, WEEKDAY_SHORT } from '@/lib/date';
+import { addDays, isSameDay, startOfDay, startOfWeek, toDateKey, WEEKDAY_SHORT } from '@/lib/date';
 import { latestWeight } from '@/domain/healthState';
+import { DEFAULT_WEIGHT_KG, sessionDayKey, sessionSteps } from '@/domain/activity';
+import { sessionsNewestFirst } from '@/domain/activityState';
+import { formatDuration, formatKm, formatSessionDate } from '@/domain/format';
+import { effectiveSteps, estimateCalories, estimateDistanceKm, goalProgress } from '@/domain/steps';
+import { useActivity } from '@/store/activity-store';
 import { useHealth } from '@/store/health-store';
 import { useMoods } from '@/store/mood-store';
 import { colors, radius, spacing } from '@/theme';
@@ -32,12 +38,15 @@ const DOT_GRID_COLUMNS = 7;
 const DOT_GRID_CELLS = 42;
 
 export default function HomeScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { getMood, setMood, clearMood } = useMoods();
   const { state: health } = useHealth();
   const latest = latestWeight(health.weights);
   const displayWeightKg = latest ? latest.kg : WEIGHT.current;
   const displayUnits = health.profile?.units ?? 'metric';
+  const greetingName = health.profile?.name?.trim() ?? '';
+  const personalInitial = greetingName ? greetingName[0].toUpperCase() : '?';
   const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
   const [notifications, setNotifications] = useState(3);
 
@@ -59,6 +68,17 @@ export default function HomeScreen() {
 
   const freudLit = Math.round((FREUD_SCORE.value / FREUD_SCORE.max) * DOT_GRID_CELLS);
 
+  const { state: activity } = useActivity();
+  const todayKey = toDateKey(new Date());
+  const todaySteps = effectiveSteps(health.steps[todayKey]);
+  const stepGoal = health.stepGoal;
+  const todayWeightKg = latest ? latest.kg : DEFAULT_WEIGHT_KG;
+  const todaySessions = sessionsNewestFirst(activity).filter((s) => sessionDayKey(s) === todayKey);
+  const todayActiveMs = todaySessions.reduce((sum, s) => sum + s.activeMs, 0);
+  const todayDistanceM = todaySessions.reduce((sum, s) => sum + s.distanceM, 0);
+  const latestSession = sessionsNewestFirst(activity)[0] ?? null;
+  const sensorPending = health.steps[todayKey] === undefined && todaySessions.length === 0;
+
   return (
     <ScrollView
       style={styles.screen}
@@ -67,9 +87,13 @@ export default function HomeScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{USER.initials}</Text>
-        </View>
+        {health.profile?.avatarUri ? (
+          <Image source={{ uri: health.profile.avatarUri }} style={styles.avatarImage} accessibilityLabel="Profile photo" />
+        ) : (
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{personalInitial}</Text>
+          </View>
+        )}
         <Pressable
           accessibilityLabel={`${notifications} notifications`}
           onPress={() => setNotifications(0)}
@@ -85,7 +109,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.greeting}>
-        <Text style={styles.hello}>Hello, {USER.name}</Text>
+        <Text style={styles.hello}>{greetingName ? `Hello, ${greetingName}` : 'Hello'}</Text>
         <Text style={styles.title}>How&apos;re You Today?</Text>
       </View>
 
@@ -123,6 +147,53 @@ export default function HomeScreen() {
         })}
       </View>
 
+      {/* Fitness summary */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open fitness tracking"
+        onPress={() => router.push('/fitness')}
+        style={styles.fitnessWrap}
+      >
+        <Card style={styles.fitnessCard}>
+          <View style={styles.rowBetween}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="walk-outline" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Today&apos;s movement</Text>
+            </View>
+            <Text style={styles.meta}>{Math.round(goalProgress(todaySteps, stepGoal) * 100)}% of goal</Text>
+          </View>
+          <Text style={styles.bigValue}>
+            {todaySteps.toLocaleString('en-US')}
+            <Text style={styles.bigValueMuted}> / {stepGoal.toLocaleString('en-US')} steps</Text>
+          </Text>
+          <View style={styles.summaryRow}>
+            <SummaryStat value={`${estimateCalories(todaySteps, todayWeightKg)} kcal`} label="Est. steps energy" />
+            <SummaryStat
+              value={formatKm(todayDistanceM > 0 ? todayDistanceM : estimateDistanceKm(todaySteps, health.profile?.heightCm) * 1000)}
+              label="Distance"
+            />
+            <SummaryStat value={todayActiveMs > 0 ? formatDuration(todayActiveMs) : '—'} label="Active today" />
+          </View>
+          <Text style={styles.meta}>
+            {latestSession
+              ? `Last walk ${formatSessionDate(latestSession.startedAt)} · ${sessionSteps(latestSession).toLocaleString('en-US')} steps`
+              : 'No tracked walks yet'}
+          </Text>
+          {sensorPending ? (
+            <Text style={styles.meta}>Steps appear here once the step sensor is allowed or entered by hand.</Text>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Start a tracked walk"
+            onPress={() => router.push('/tracking')}
+            style={styles.trackButton}
+          >
+            <Ionicons name="play" size={14} color={colors.onAccent} />
+            <Text style={styles.trackButtonText}>Track a walk</Text>
+          </Pressable>
+        </Card>
+      </Pressable>
+
       {/* Dashboard grid */}
       <View style={styles.grid}>
         <View style={styles.column}>
@@ -130,6 +201,7 @@ export default function HomeScreen() {
             <View style={styles.cardHeader}>
               <Ionicons name="cloud-outline" size={16} color={colors.text} />
               <Text style={styles.cardTitle}>Freud Score</Text>
+              <Text style={styles.sampleTag}>Sample</Text>
             </View>
             <Text style={styles.bigValue}>
               {FREUD_SCORE.value}
@@ -161,6 +233,7 @@ export default function HomeScreen() {
               <View style={styles.cardHeader}>
                 <Ionicons name="trending-up" size={16} color={colors.text} />
                 <Text style={styles.cardTitle}>Growth</Text>
+                <Text style={styles.sampleTag}>Sample</Text>
               </View>
               <Text style={styles.smallValue}>
                 {GROWTH.percent}
@@ -206,6 +279,7 @@ export default function HomeScreen() {
             <View style={styles.cardHeader}>
               <Ionicons name="happy-outline" size={16} color={colors.text} />
               <Text style={styles.cardTitle}>Mood Statistic</Text>
+              <Text style={styles.sampleTag}>Sample</Text>
             </View>
             <View style={styles.donutWrap}>
               <DonutChart
@@ -231,11 +305,25 @@ export default function HomeScreen() {
           </Card>
         </View>
       </View>
+      <Text style={styles.sampleNote}>
+        Freud score, growth and mood statistic are sample values. Steps, walks, weight and heart rate come from your saved records.
+      </Text>
     </ScrollView>
   );
 }
 
+function SummaryStat({ value, label }: { value: string; label: string }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.summaryStat}>
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryLabel}>{label}</Text>
+    </View>
+  );
+}
+
 function LegendDot({ color, label }: { color: string; label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
@@ -244,7 +332,9 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
+  avatarImage: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.cardBorder },
+  sampleNote: { color: colors.textFaint, fontSize: 11, lineHeight: 16, marginTop: spacing.xl, textAlign: 'center' },
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -269,7 +359,7 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
   },
   avatarText: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '800',
     fontSize: 17,
   },
@@ -342,7 +432,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   dayNameActive: {
-    color: colors.background,
+    color: colors.onAccent,
     fontWeight: '600',
   },
   dayNumber: {
@@ -352,7 +442,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   dayNumberActive: {
-    color: colors.background,
+    color: colors.onAccent,
   },
   moodTap: {
     marginTop: 8,
@@ -387,6 +477,14 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 13,
     fontWeight: '600',
+  },
+  sampleTag: {
+    color: colors.textFaint,
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginLeft: 'auto',
   },
   rowBetween: {
     flexDirection: 'row',
@@ -475,5 +573,47 @@ const styles = StyleSheet.create({
   legendText: {
     color: colors.textMuted,
     fontSize: 10,
+  },
+  fitnessWrap: {
+    marginTop: spacing.xl,
+  },
+  fitnessCard: {
+    gap: spacing.sm,
+  },
+  meta: {
+    color: colors.textMuted,
+    fontSize: 11,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    marginTop: spacing.md,
+  },
+  summaryStat: {
+    flex: 1,
+  },
+  summaryValue: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  summaryLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  trackButton: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: radius.sm,
+    backgroundColor: colors.mint,
+  },
+  trackButtonText: {
+    color: colors.onAccent,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

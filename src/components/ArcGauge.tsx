@@ -1,3 +1,5 @@
+import { useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -43,6 +45,7 @@ export function ArcGauge({
   strokeWidth = 26,
   children,
 }: ArcGaugeProps) {
+  useThemeVersion();
   const c = size / 2;
   const r = size / 2 - strokeWidth / 2 - 2;
   const clamped = Math.min(Math.max(progress, 0), 1);

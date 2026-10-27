@@ -1,5 +1,7 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
@@ -32,6 +34,7 @@ const STATUS_TEXT: Record<StepSensorStatus, string> = {
 };
 
 export default function StepsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { state, setSensor, setManual, saveStepGoal } = useHealth();
 
@@ -47,9 +50,22 @@ export default function StepsScreen() {
   const distanceKm = estimateDistanceKm(steps, profileHeight);
   const calories = estimateCalories(steps, weightKg);
 
-  const { status, lastError, requestPermission } = useStepSensor({
+  const { status, lastError, canAskAgain, requestPermission } = useStepSensor({
     onSteps: (dayKey, count) => setSensor(dayKey, count),
   });
+
+  // Once denied with "don't ask again", Android and iOS show no prompt, so the
+  // only way to enable access is in system settings.
+  const needsSettings = status === 'denied' && canAskAgain === false;
+  const onAllowPress = () => {
+    if (needsSettings) {
+      Linking.openSettings().catch(() => {
+        // Ignore: some devices cannot open the app's settings page.
+      });
+      return;
+    }
+    requestPermission();
+  };
 
   const [manualInput, setManualInput] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
@@ -92,7 +108,10 @@ export default function StepsScreen() {
           {status === 'error' && lastError ? <Text style={styles.errorText}>{lastError}</Text> : null}
           {status === 'permission-needed' || status === 'denied' ? (
             <View style={{ marginTop: spacing.md }}>
-              <Button label="Allow motion access" onPress={requestPermission} />
+              <Button
+                label={needsSettings ? 'Open app settings' : 'Allow motion access'}
+                onPress={onAllowPress}
+              />
             </View>
           ) : null}
         </Card>
@@ -194,6 +213,7 @@ export default function StepsScreen() {
 }
 
 function Estimate({ label, value }: { label: string; value: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.estimate}>
       <Text style={styles.estimateValue}>{value}</Text>
@@ -202,7 +222,7 @@ function Estimate({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   content: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   statusText: { color: colors.textMuted, fontSize: 13, lineHeight: 19 },
