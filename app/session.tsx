@@ -118,9 +118,12 @@ export default function SessionDetailScreen() {
             </Text>
           </View>
         ) : (
-          <Text style={styles.explain}>
-            GPS was off for this walk, so there is no route map. Steps and time are still saved.
-          </Text>
+          <View>
+            <RouteMap points={[]} height={220} />
+            <Text style={styles.explain}>
+              GPS was off for this walk, so no route was recorded. Turn on GPS when you start a walk to see its route here.
+            </Text>
+          </View>
         )}
 
         <Card>
