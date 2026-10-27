@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -12,6 +14,7 @@ interface ProgressBarProps {
 
 /** Labelled horizontal bar used for the Work / Sleep balance rows. */
 export function ProgressBar({ label, valueLabel, progress, color }: ProgressBarProps) {
+  const styles = useThemedStyles(makeStyles);
   const clamped = Math.min(Math.max(progress, 0), 1);
   return (
     <View style={styles.wrap}>
@@ -26,7 +29,7 @@ export function ProgressBar({ label, valueLabel, progress, color }: ProgressBarP
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   wrap: {
     marginBottom: 14,
   },

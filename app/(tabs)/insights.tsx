@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -5,7 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/Card';
 import { SLEEP_SEGMENTS, WORK_LIFE } from '@/data/mock';
+import { computeInsights, type Insight as FitnessInsight } from '@/domain/insights';
+import { latestWeight } from '@/domain/healthState';
 import { addDays, startOfDay, startOfWeek } from '@/lib/date';
+import { useActivity } from '@/store/activity-store';
+import { useHealth } from '@/store/health-store';
 import { useMoods } from '@/store/mood-store';
 import { colors, radius, spacing } from '@/theme';
 import type { MoodKey, SleepSegment } from '@/types';
@@ -23,6 +29,7 @@ interface Insight {
 const POSITIVE: MoodKey[] = ['happy', 'love'];
 
 export default function InsightsScreen() {
+  const styles = useThemedStyles(makeStyles);
   const insets = useSafeAreaInsets();
   const { getMood } = useMoods();
 
@@ -95,6 +102,22 @@ export default function InsightsScreen() {
     return list;
   }, [getMood]);
 
+  const { state: health } = useHealth();
+  const { state: activity } = useActivity();
+  const fitnessInsights = useMemo<FitnessInsight[]>(
+    () =>
+      computeInsights({
+        steps: health.steps,
+        stepGoal: health.stepGoal,
+        sessions: activity.sessions,
+        weights: health.weights,
+        heartRate: health.heartRate,
+        now: new Date(),
+      }),
+    [health.steps, health.stepGoal, health.weights, health.heartRate, activity.sessions],
+  );
+  const hasWeight = latestWeight(health.weights) !== null;
+
   return (
     <ScrollView
       style={styles.screen}
@@ -117,11 +140,30 @@ export default function InsightsScreen() {
           </Card>
         ))}
       </View>
+
+      <Text style={styles.sectionTitle}>Fitness</Text>
+      <Text style={styles.subtitle}>
+        {hasWeight ? 'From your steps, walks and weight entries.' : 'From your steps and walks.'}
+      </Text>
+      <View style={styles.list}>
+        {fitnessInsights.map((item) => (
+          <Card key={item.id} style={styles.card}>
+            <View style={[styles.iconWrap, { backgroundColor: colors.surface }]}>
+              <Ionicons name="walk-outline" size={18} color={colors.mint} />
+            </View>
+            <View style={styles.cardText}>
+              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text style={styles.cardBody}>{item.body}</Text>
+              <Text style={styles.period}>{item.period}</Text>
+            </View>
+          </Card>
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
@@ -169,5 +211,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: spacing.xxl,
+  },
+  period: {
+    color: colors.textFaint,
+    fontSize: 11,
+    marginTop: 6,
   },
 });

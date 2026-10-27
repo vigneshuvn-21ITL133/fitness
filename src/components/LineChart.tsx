@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
@@ -26,6 +28,7 @@ const PAD = { top: 12, bottom: 22, left: 36, right: 12 };
 
 /** Simple multi-series line chart with gridlines and sparse x labels. */
 export function LineChart({ series, labels, height = 160, yMin, yMax, unit = '' }: LineChartProps) {
+  const styles = useThemedStyles(makeStyles);
   const { lo, hi } = useMemo(() => {
     const all = series.flatMap((s) => s.values).filter((v): v is number => v !== null);
     if (all.length === 0) return { lo: yMin ?? 0, hi: yMax ?? 1 };
@@ -130,7 +133,7 @@ export function LineChart({ series, labels, height = 160, yMin, yMax, unit = '' 
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   yAxis: {
     position: 'absolute',
     left: 0,

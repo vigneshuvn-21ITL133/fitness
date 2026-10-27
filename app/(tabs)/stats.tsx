@@ -1,3 +1,5 @@
+import { useThemedStyles, useThemeVersion } from '@/store/theme-store';
+import type { Palette } from '@/theme';
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -20,6 +22,7 @@ const MOOD_RANGE_DAYS: Record<MoodRange, number> = { Week: 7, Fortnight: 14 };
 const RING_COLORS = [colors.mint, colors.yellow, colors.lilac] as const;
 
 export default function HealthOverviewScreen() {
+  const styles = useThemedStyles(makeStyles);
   const { getMood } = useMoods();
   const { state: health } = useHealth();
   const [moodRange, setMoodRange] = useState<MoodRange>('Week');
@@ -141,6 +144,7 @@ function Stat({
   label: string;
   color: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>
@@ -155,7 +159,7 @@ function Stat({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,

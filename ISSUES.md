@@ -40,6 +40,30 @@ Known limits of the issue #1 work:
 - Age is entered in years rather than a date of birth.
 - Not yet run on a device. Android testing is still required (acceptance criterion).
 
+## Issue #3: Real-time tracking, GPS routes, profile, insights and privacy (implemented)
+
+- [x] Live walk tracking (`app/tracking.tsx`): start, pause, resume, finish with confirmation; timer, steps, distance, pace and estimated kcal update live
+- [x] Step counting per walk from the pedometer, with a manual step count fallback when the sensor is unavailable or denied
+- [x] Optional GPS route (foreground only): accuracy filter (25 m), jitter filter (3 m), jump filter (12 m/s), haversine distance, pace in min/km
+- [x] Route map using Leaflet and OpenStreetMap tiles inside a WebView (`src/components/RouteMap.tsx`)
+- [x] Crash and interruption recovery: a heartbeat every 10 s; unfinished walks are saved as "interrupted" up to the last heartbeat
+- [x] Walk history (`app/sessions.tsx`) and walk detail (`app/session.tsx`): stats, route, manual steps, delete with confirmation
+- [x] Calorie estimate (MET × weight × hours) saved at finish with the weight used; the detail screen also shows a recalculated value at the current weight
+- [x] Home "Today's movement" card: steps vs goal, estimated energy, distance, active time, latest walk, "Track a walk" action
+- [x] Insights section (`computeInsights`): week-over-week steps, 7-day average, goal streak, weekly walk distance, longest walk, 30-day weight trend, goal suggestion, each with its period
+- [x] Profile: optional name and fitness goal; "Clear personal data" deletes health and walk data after confirmation
+- [x] Storage in AsyncStorage (`pulse.activity.v1`), malformed sessions and route points dropped on load
+- [x] Unit tests: GPS point decisions, haversine, pace, MET and kcal, session transitions, recovery, state sanitising, insights
+- [x] Type check, `bun test` and Android export pass
+
+Known limits of the issue #3 work:
+- Not run on a device. Pedometer, GPS permission flow, the WebView map and recovery after a kill are unverified on hardware.
+- Foreground only. Walks are not recorded while the app is in the background or the screen is off. Background location is not implemented.
+- The map loads Leaflet from unpkg and tiles from OpenStreetMap. It needs internet, and OSM's tile usage policy applies.
+- Calorie figures are estimates. They are not measured energy expenditure.
+- Step counts are the pedometer steps between the start and end of each running period (paused time is excluded). A manual count overrides them.
+- No profile photo.
+
 ## Open
 
 1. **Not verified on a device.** This includes the new step sensor, permission flow and forms. Nothing has been run in a simulator or on a phone. Visual match to the design is unchecked.

@@ -6,6 +6,7 @@ import { DEFAULT_STEP_GOAL } from '@/domain/steps';
 import type {
   BloodPressureEntry,
   HealthState,
+  HeartRateEntry,
   Profile,
   StepDay,
   WeightEntry,
@@ -19,6 +20,7 @@ export function initialHealthState(): HealthState {
     steps: {},
     weights: [],
     bloodPressure: [],
+    heartRate: [],
   };
 }
 
@@ -113,6 +115,24 @@ export function latestBloodPressure(entries: BloodPressureEntry[]): BloodPressur
   return sorted.length > 0 ? sorted[sorted.length - 1] : null;
 }
 
+export function addHeartRate(state: HealthState, entry: HeartRateEntry): HealthState {
+  return { ...state, heartRate: [...state.heartRate, entry] };
+}
+
+export function deleteHeartRate(state: HealthState, id: string): HealthState {
+  return { ...state, heartRate: state.heartRate.filter((h) => h.id !== id) };
+}
+
+/** Readings sorted oldest → newest. */
+export function sortedHeartRate(entries: HeartRateEntry[]): HeartRateEntry[] {
+  return [...entries].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+}
+
+export function latestHeartRate(entries: HeartRateEntry[]): HeartRateEntry | null {
+  const sorted = sortedHeartRate(entries);
+  return sorted.length > 0 ? sorted[sorted.length - 1] : null;
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
@@ -135,6 +155,13 @@ export function sanitizeHealthState(raw: unknown): HealthState {
     const units = p.units === 'metric' || p.units === 'imperial' ? p.units : null;
     if (isFiniteNumber(p.age) && isFiniteNumber(p.heightCm) && units !== null) {
       profile = { age: p.age, heightCm: p.heightCm, units };
+      if (typeof p.name === 'string' && p.name.trim() !== '') profile.name = p.name.trim().slice(0, 40);
+      if (typeof p.fitnessGoal === 'string' && p.fitnessGoal.trim() !== '') {
+        profile.fitnessGoal = p.fitnessGoal.trim().slice(0, 120);
+      }
+      if (typeof p.avatarUri === 'string' && p.avatarUri.startsWith('file:')) {
+        profile.avatarUri = p.avatarUri;
+      }
     }
   }
 
@@ -172,5 +199,16 @@ export function sanitizeHealthState(raw: unknown): HealthState {
       )
     : [];
 
-  return { version: 1, profile, stepGoal, steps, weights, bloodPressure };
+  const heartRate = Array.isArray(raw.heartRate)
+    ? raw.heartRate.filter(
+        (h): h is HeartRateEntry =>
+          isRecord(h) &&
+          typeof h.id === 'string' &&
+          typeof h.timestamp === 'string' &&
+          isFiniteNumber(h.bpm) &&
+          h.source === 'manual',
+      )
+    : [];
+
+  return { version: 1, profile, stepGoal, steps, weights, bloodPressure, heartRate };
 }
