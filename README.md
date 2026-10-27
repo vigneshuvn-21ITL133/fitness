@@ -33,9 +33,10 @@ It reproduces the "How're You Today?" design: a home dashboard, a Health Overvie
 
 - **Fitness** dashboard (reach it from the Stats tab): steps, weight, blood pressure, BMI and quick actions.
 - **Steps**: reads the device pedometer (expo-sensors) after you allow motion access. Enter steps manually to override it or when no sensor is available.
-- **Weight** and **Blood Pressure**: add, edit and delete entries; history and trend charts.
+- **Weight** and **Blood Pressure**: add, edit and delete entries; history and trend charts. Each entry stores its source (manual now, ready for HealthKit/Health Connect/derived imports).
 - **Profile**: age, height and units. BMI is shown with WHO adult categories; under-18s get guidance only.
 - **Health Benefits**: general educational content with safety text.
+- **v1 step capture scope**: foreground sensor reads plus manual entry fallback. Background step capture is not enabled yet.
 
 All health data is stored only on this device, in AsyncStorage under `pulse.health.v1`. Nothing is sent to a server.
 

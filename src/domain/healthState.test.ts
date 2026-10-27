@@ -12,7 +12,12 @@ import {
   weightChange,
 } from './healthState';
 
-const w = (id: string, timestamp: string, kg: number) => ({ id, timestamp, kg });
+const w = (id: string, timestamp: string, kg: number, source: 'manual' | 'healthkit' = 'manual') => ({
+  id,
+  timestamp,
+  kg,
+  source,
+});
 
 describe('weight changes', () => {
   test('no change with fewer than two entries', () => {
@@ -67,7 +72,7 @@ describe('sanitizeHealthState', () => {
   test('drops malformed entries but keeps valid ones', () => {
     const state = sanitizeHealthState({
       weights: [w('ok', '2026-10-01T08:00', 80), { id: 1, kg: 'x' }],
-      bloodPressure: [{ id: 'bp', timestamp: 't', systolic: 120, diastolic: 80 }, null],
+      bloodPressure: [{ id: 'bp', timestamp: 't', systolic: 120, diastolic: 80, source: 'manual' }, null],
       steps: { '2026-10-26': { manual: 4000, sensor: 'nope' } },
       stepGoal: -5,
     });
@@ -75,6 +80,32 @@ describe('sanitizeHealthState', () => {
     expect(state.bloodPressure).toHaveLength(1);
     expect(state.steps['2026-10-26']).toEqual({ manual: 4000 });
     expect(state.stepGoal).toBe(initialHealthState().stepGoal);
+  });
+
+  test('defaults reading source to manual for legacy entries', () => {
+    const state = sanitizeHealthState({
+      weights: [{ id: 'w', timestamp: '2026-10-01T08:00', kg: 75 }],
+      bloodPressure: [{ id: 'bp', timestamp: '2026-10-01T08:00', systolic: 120, diastolic: 80 }],
+    });
+    expect(state.weights[0]?.source).toBe('manual');
+    expect(state.bloodPressure[0]?.source).toBe('manual');
+  });
+
+  test('keeps known reading sources and drops unknown ones', () => {
+    const state = sanitizeHealthState({
+      weights: [
+        { id: 'w1', timestamp: '2026-10-01T08:00', kg: 75, source: 'healthkit' },
+        { id: 'w2', timestamp: '2026-10-01T08:01', kg: 74, source: 'other' },
+      ],
+      bloodPressure: [
+        { id: 'bp1', timestamp: '2026-10-01T08:00', systolic: 120, diastolic: 80, source: 'derived' },
+        { id: 'bp2', timestamp: '2026-10-01T08:01', systolic: 121, diastolic: 81, source: 'other' },
+      ],
+    });
+    expect(state.weights).toHaveLength(1);
+    expect(state.weights[0]?.source).toBe('healthkit');
+    expect(state.bloodPressure).toHaveLength(1);
+    expect(state.bloodPressure[0]?.source).toBe('derived');
   });
 
   test('rejects an unknown profile units value', () => {

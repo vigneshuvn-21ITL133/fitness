@@ -14,6 +14,16 @@ export function effectiveSteps(day: StepDay | undefined): number {
   return day.manual ?? day.sensor ?? 0;
 }
 
+export type StepSource = 'manual' | 'sensor' | 'none';
+
+/** Which source currently drives the day's step value. */
+export function stepSource(day: StepDay | undefined): StepSource {
+  if (!day) return 'none';
+  if (day.manual !== undefined) return 'manual';
+  if (day.sensor !== undefined) return 'sensor';
+  return 'none';
+}
+
 /** Progress toward the goal, clamped to 0..1. */
 export function goalProgress(steps: number, goal: number): number {
   if (goal <= 0) return 0;

@@ -14,11 +14,24 @@ import { averageBp, BP_CATEGORY_LABEL, categorizeBp } from '@/domain/bloodPressu
 import { getBmiResult } from '@/domain/bmi';
 import { latestBloodPressure, latestHeartRate, latestWeight, weightChange } from '@/domain/healthState';
 import { formatDateTime } from '@/lib/date';
-import { effectiveSteps, goalProgress } from '@/domain/steps';
+import { effectiveSteps, goalProgress, stepSource } from '@/domain/steps';
 import { formatChange, formatWeight } from '@/domain/units';
 import { toDateKey } from '@/lib/date';
 import { useHealth } from '@/store/health-store';
 import { colors, spacing } from '@/theme';
+import type { HeartRateSource, ReadingSource } from '@/types';
+
+const READING_SOURCE_LABEL: Record<ReadingSource, string> = {
+  manual: 'Manual',
+  healthkit: 'HealthKit',
+  'health-connect': 'Health Connect',
+  derived: 'Derived',
+};
+
+const HR_SOURCE_LABEL: Record<HeartRateSource, string> = {
+  manual: 'Manual entry',
+  tap: '15-second tap count',
+};
 
 export default function FitnessDashboardScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -28,6 +41,7 @@ export default function FitnessDashboardScreen() {
 
   const todayKey = toDateKey(new Date());
   const steps = effectiveSteps(state.steps[todayKey]);
+  const stepsSource = stepSource(state.steps[todayKey]);
   const progress = goalProgress(steps, state.stepGoal);
 
   const latestW = latestWeight(state.weights);
@@ -66,6 +80,10 @@ export default function FitnessDashboardScreen() {
               <Text style={styles.cardLabel}>Steps today</Text>
               <Text style={styles.bigValue}>{steps.toLocaleString('en-US')}</Text>
               <Text style={styles.meta}>Goal {state.stepGoal.toLocaleString('en-US')}</Text>
+              <Text style={styles.meta}>
+                Source:{' '}
+                {stepsSource === 'manual' ? 'Manual entry' : stepsSource === 'sensor' ? 'Device sensor' : 'No data yet'}
+              </Text>
             </View>
           </Card>
         </Pressable>
@@ -80,6 +98,7 @@ export default function FitnessDashboardScreen() {
               <Text style={styles.meta}>
                 {change !== null ? formatChange(change, units) : 'Add two entries for a change'}
               </Text>
+              {latestW ? <Text style={styles.meta}>Source: {READING_SOURCE_LABEL[latestW.source]}</Text> : null}
             </Card>
           </Pressable>
           <Pressable style={styles.half} onPress={() => router.navigate('/blood-pressure')} accessibilityRole="button">
@@ -93,6 +112,7 @@ export default function FitnessDashboardScreen() {
                   ? BP_CATEGORY_LABEL[categorizeBp(latestBp.systolic, latestBp.diastolic)]
                   : 'No readings yet'}
               </Text>
+              {latestBp ? <Text style={styles.meta}>Source: {READING_SOURCE_LABEL[latestBp.source]}</Text> : null}
             </Card>
           </Pressable>
         </View>
@@ -140,7 +160,9 @@ export default function FitnessDashboardScreen() {
                 <Text style={styles.midValue}>
                   {latestHr.bpm} <Text style={styles.meta}>bpm</Text>
                 </Text>
-                <Text style={styles.meta}>{formatDateTime(latestHr.timestamp)} · Manual entry</Text>
+                <Text style={styles.meta}>
+                  {formatDateTime(latestHr.timestamp)} · {HR_SOURCE_LABEL[latestHr.source]}
+                </Text>
               </>
             ) : (
               <Text style={styles.meta}>No readings yet. Enter one by hand.</Text>

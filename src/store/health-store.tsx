@@ -23,6 +23,7 @@ import type {
   HeartRateEntry,
   HeartRateSource,
   Profile,
+  ReadingSource,
   WeightEntry,
 } from '@/types';
 
@@ -37,10 +38,10 @@ interface HealthContextValue {
   saveStepGoal: (goal: number) => void;
   setManual: (dayKey: string, count: number | null) => void;
   setSensor: (dayKey: string, count: number) => void;
-  addWeightEntry: (kg: number, timestamp?: string) => void;
+  addWeightEntry: (kg: number, timestamp?: string, source?: ReadingSource) => void;
   editWeightEntry: (id: string, kg: number) => void;
   removeWeightEntry: (id: string) => void;
-  addBpEntry: (systolic: number, diastolic: number, timestamp?: string) => void;
+  addBpEntry: (systolic: number, diastolic: number, timestamp?: string, source?: ReadingSource) => void;
   editBpEntry: (id: string, systolic: number, diastolic: number) => void;
   removeBpEntry: (id: string) => void;
   addHrEntry: (bpm: number, timestamp?: string, source?: HeartRateSource) => void;
@@ -100,14 +101,14 @@ export function HealthProvider({ children }: { children: React.ReactNode }) {
       saveStepGoal: (goal) => apply((s) => setStepGoal(s, goal)),
       setManual: (dayKey, count) => apply((s) => setManualSteps(s, dayKey, count)),
       setSensor: (dayKey, count) => apply((s) => setSensorSteps(s, dayKey, count)),
-      addWeightEntry: (kg, timestamp = new Date().toISOString()) => {
-        const entry: WeightEntry = { id: newId(), timestamp, kg };
+      addWeightEntry: (kg, timestamp = new Date().toISOString(), source = 'manual') => {
+        const entry: WeightEntry = { id: newId(), timestamp, kg, source };
         apply((s) => addWeight(s, entry));
       },
       editWeightEntry: (id, kg) => apply((s) => updateWeight(s, id, kg)),
       removeWeightEntry: (id) => apply((s) => deleteWeight(s, id)),
-      addBpEntry: (systolic, diastolic, timestamp = new Date().toISOString()) => {
-        const entry: BloodPressureEntry = { id: newId(), timestamp, systolic, diastolic };
+      addBpEntry: (systolic, diastolic, timestamp = new Date().toISOString(), source = 'manual') => {
+        const entry: BloodPressureEntry = { id: newId(), timestamp, systolic, diastolic, source };
         apply((s) => addBloodPressure(s, entry));
       },
       editBpEntry: (id, systolic, diastolic) =>

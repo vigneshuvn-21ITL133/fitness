@@ -40,6 +40,8 @@ export interface WeightEntry {
   timestamp: string;
   /** Always stored in kilograms; converted for display. */
   kg: number;
+  /** How this reading was obtained. */
+  source: ReadingSource;
 }
 
 export interface BloodPressureEntry {
@@ -48,7 +50,11 @@ export interface BloodPressureEntry {
   timestamp: string;
   systolic: number;
   diastolic: number;
+  /** How this reading was obtained. */
+  source: ReadingSource;
 }
+
+export type ReadingSource = 'manual' | 'healthkit' | 'health-connect' | 'derived';
 
 export interface StepDay {
   /** Count read from the device pedometer for that day. */

@@ -16,6 +16,14 @@ import { validateBloodPressure } from '@/domain/validation';
 import { formatDateTime, formatDayMonth } from '@/lib/date';
 import { useHealth } from '@/store/health-store';
 import { colors, spacing } from '@/theme';
+import type { ReadingSource } from '@/types';
+
+const SOURCE_LABEL: Record<ReadingSource, string> = {
+  manual: 'Manual',
+  healthkit: 'HealthKit',
+  'health-connect': 'Health Connect',
+  derived: 'Derived',
+};
 
 export default function BloodPressureScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -82,6 +90,7 @@ export default function BloodPressureScreen() {
           <Text style={styles.summaryValue}>
             {latest ? `${latest.systolic}/${latest.diastolic} mmHg` : 'No readings yet'}
           </Text>
+          {latest ? <Text style={styles.source}>Source: {SOURCE_LABEL[latest.source]}</Text> : null}
           {latest ? (
             <Text style={styles.category}>
               {BP_CATEGORY_LABEL[categorizeBp(latest.systolic, latest.diastolic)]}
@@ -158,7 +167,8 @@ export default function BloodPressureScreen() {
                   {entry.systolic}/{entry.diastolic} mmHg
                 </Text>
                 <Text style={styles.rowMeta}>
-                  {BP_CATEGORY_LABEL[categorizeBp(entry.systolic, entry.diastolic)]} · {formatDateTime(entry.timestamp)}
+                  {BP_CATEGORY_LABEL[categorizeBp(entry.systolic, entry.diastolic)]} · {formatDateTime(entry.timestamp)} ·{' '}
+                  {SOURCE_LABEL[entry.source]}
                 </Text>
               </View>
               <View style={styles.rowActions}>
@@ -183,6 +193,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   summary: { alignItems: 'center' },
   summaryLabel: { color: colors.textMuted, fontSize: 13 },
   summaryValue: { color: colors.text, fontSize: 28, fontWeight: '700', marginTop: 4 },
+  source: { color: colors.textMuted, fontSize: 12, marginTop: spacing.xs },
   category: { color: colors.yellow, fontSize: 14, fontWeight: '600', marginTop: spacing.xs },
   average: { color: colors.textMuted, fontSize: 12, marginTop: spacing.sm },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: spacing.md },
