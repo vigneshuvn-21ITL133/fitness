@@ -15,6 +15,7 @@ import {
   estimateCalories,
   estimateDistanceKm,
   goalProgress,
+  stepSource,
   weeklySteps,
 } from '@/domain/steps';
 import { latestWeight } from '@/domain/healthState';
@@ -42,6 +43,7 @@ export default function StepsScreen() {
   const todayKey = toDateKey(today);
   const todayEntry = state.steps[todayKey];
   const steps = effectiveSteps(todayEntry);
+  const source = stepSource(todayEntry);
   const goal = state.stepGoal;
   const progress = goalProgress(steps, goal);
 
@@ -132,6 +134,9 @@ export default function StepsScreen() {
             <Estimate label="Energy (est.)" value={`${calories} kcal`} />
             <Estimate label="Goal reached" value={`${Math.round(progress * 100)}%`} />
           </View>
+          <Text style={styles.sourceText}>
+            Source: {source === 'manual' ? 'Manual entry' : source === 'sensor' ? 'Device sensor' : 'No data yet'}
+          </Text>
           <Text style={styles.disclaimer}>
             Distance and energy are rough estimates from height and weight, not measurements.
           </Text>
@@ -235,6 +240,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   estimate: { alignItems: 'center' },
   estimateValue: { color: colors.text, fontSize: 15, fontWeight: '600' },
   estimateLabel: { color: colors.textMuted, fontSize: 11, marginTop: 2 },
+  sourceText: { color: colors.textMuted, fontSize: 12, marginTop: spacing.md },
   disclaimer: { color: colors.textFaint, fontSize: 11, marginTop: spacing.md, textAlign: 'center' },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: spacing.sm },
   helper: { color: colors.textMuted, fontSize: 13, lineHeight: 19, marginBottom: spacing.md },

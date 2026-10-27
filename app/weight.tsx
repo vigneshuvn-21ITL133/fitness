@@ -16,6 +16,14 @@ import { validateWeightKg } from '@/domain/validation';
 import { formatDateTime, formatDayMonth } from '@/lib/date';
 import { useHealth } from '@/store/health-store';
 import { colors, spacing } from '@/theme';
+import type { ReadingSource } from '@/types';
+
+const SOURCE_LABEL: Record<ReadingSource, string> = {
+  manual: 'Manual',
+  healthkit: 'HealthKit',
+  'health-connect': 'Health Connect',
+  derived: 'Derived',
+};
 
 export default function WeightScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -83,6 +91,7 @@ export default function WeightScreen() {
           <Text style={styles.summaryValue}>
             {latest ? formatWeight(latest.kg, units) : 'No entries yet'}
           </Text>
+          {latest ? <Text style={styles.source}>Source: {SOURCE_LABEL[latest.source]}</Text> : null}
           {change !== null ? (
             <Text style={[styles.change, { color: change > 0 ? colors.orange : colors.mint }]}>
               {formatChange(change, units)} since last entry
@@ -134,7 +143,9 @@ export default function WeightScreen() {
             <Card key={entry.id} style={styles.row}>
               <View style={styles.rowText}>
                 <Text style={styles.rowValue}>{formatWeight(entry.kg, units)}</Text>
-                <Text style={styles.rowDate}>{formatDateTime(entry.timestamp)}</Text>
+                <Text style={styles.rowDate}>
+                  {formatDateTime(entry.timestamp)} · {SOURCE_LABEL[entry.source]}
+                </Text>
               </View>
               <View style={styles.rowActions}>
                 <Button label="Edit" variant="secondary" onPress={() => startEdit(entry.id, entry.kg)} />
@@ -154,6 +165,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   summary: { alignItems: 'center' },
   summaryLabel: { color: colors.textMuted, fontSize: 13 },
   summaryValue: { color: colors.text, fontSize: 30, fontWeight: '700', marginTop: 4 },
+  source: { color: colors.textMuted, fontSize: 12, marginTop: spacing.xs },
   change: { fontSize: 13, fontWeight: '600', marginTop: spacing.sm },
   card: {},
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: '600', marginBottom: spacing.md },

@@ -24,7 +24,7 @@ describe('computeInsights', () => {
 
   test('a single weight entry does not produce a trend', () => {
     const list = computeInsights(
-      inputs({ weights: [{ id: 'w', timestamp: now.toISOString(), kg: 70 }] }),
+      inputs({ weights: [{ id: 'w', timestamp: now.toISOString(), kg: 70, source: 'manual' }] }),
     );
     expect(list.some((i) => i.id === 'weight-trend' && /down|up|stable/i.test(i.title))).toBe(false);
   });

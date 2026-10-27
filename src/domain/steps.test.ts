@@ -6,12 +6,27 @@ import {
   estimateDistanceKm,
   goalProgress,
   lastDays,
+  stepSource,
   weeklySteps,
 } from './steps';
 
 describe('effectiveSteps', () => {
   test('uses the sensor value when there is no manual entry', () => {
     expect(effectiveSteps({ sensor: 4200 })).toBe(4200);
+  });
+
+  describe('stepSource', () => {
+    test('returns none for unknown days', () => {
+      expect(stepSource(undefined)).toBe('none');
+    });
+
+    test('returns sensor when only sensor data exists', () => {
+      expect(stepSource({ sensor: 0 })).toBe('sensor');
+    });
+
+    test('returns manual when manual data is present', () => {
+      expect(stepSource({ sensor: 4200, manual: 6000 })).toBe('manual');
+    });
   });
 
   test('manual entry overrides the sensor', () => {

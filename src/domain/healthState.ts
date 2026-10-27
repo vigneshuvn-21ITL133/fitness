@@ -8,6 +8,7 @@ import type {
   HealthState,
   HeartRateEntry,
   Profile,
+  ReadingSource,
   StepDay,
   WeightEntry,
 } from '@/types';
@@ -141,6 +142,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function isReadingSource(value: unknown): value is ReadingSource {
+  return value === 'manual' || value === 'healthkit' || value === 'health-connect' || value === 'derived';
+}
+
 /**
  * Validates stored JSON. Malformed parts are dropped rather than crashing
  * the app, so bad data never reaches the UI.
@@ -179,24 +184,42 @@ export function sanitizeHealthState(raw: unknown): HealthState {
   }
 
   const weights = Array.isArray(raw.weights)
-    ? raw.weights.filter(
-        (w): w is WeightEntry =>
-          isRecord(w) &&
-          typeof w.id === 'string' &&
-          typeof w.timestamp === 'string' &&
-          isFiniteNumber(w.kg),
-      )
+    ? raw.weights.flatMap((w): WeightEntry[] => {
+        if (
+          !isRecord(w) ||
+          typeof w.id !== 'string' ||
+          typeof w.timestamp !== 'string' ||
+          !isFiniteNumber(w.kg) ||
+          (w.source !== undefined && !isReadingSource(w.source))
+        ) {
+          return [];
+        }
+        return [{ id: w.id, timestamp: w.timestamp, kg: w.kg, source: w.source ?? 'manual' }];
+      })
     : [];
 
   const bloodPressure = Array.isArray(raw.bloodPressure)
-    ? raw.bloodPressure.filter(
-        (b): b is BloodPressureEntry =>
-          isRecord(b) &&
-          typeof b.id === 'string' &&
-          typeof b.timestamp === 'string' &&
-          isFiniteNumber(b.systolic) &&
-          isFiniteNumber(b.diastolic),
-      )
+    ? raw.bloodPressure.flatMap((b): BloodPressureEntry[] => {
+        if (
+          !isRecord(b) ||
+          typeof b.id !== 'string' ||
+          typeof b.timestamp !== 'string' ||
+          !isFiniteNumber(b.systolic) ||
+          !isFiniteNumber(b.diastolic) ||
+          (b.source !== undefined && !isReadingSource(b.source))
+        ) {
+          return [];
+        }
+        return [
+          {
+            id: b.id,
+            timestamp: b.timestamp,
+            systolic: b.systolic,
+            diastolic: b.diastolic,
+            source: b.source ?? 'manual',
+          },
+        ];
+      })
     : [];
 
   const heartRate = Array.isArray(raw.heartRate)
