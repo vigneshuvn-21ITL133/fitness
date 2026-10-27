@@ -39,12 +39,12 @@ export function ScreenHeader({ title, showBack = true }: ScreenHeaderProps) {
           <Ionicons name="chevron-back" size={20} color={colors.text} />
         </Pressable>
       ) : (
-        <View style={styles.back} />
+        <View style={styles.spacer} />
       )}
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
-      <View style={styles.back} />
+      <View style={styles.spacer} />
     </View>
   );
 }
@@ -56,6 +56,10 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.lg,
+  },
+  spacer: {
+    width: 42,
+    height: 42,
   },
   back: {
     width: 42,

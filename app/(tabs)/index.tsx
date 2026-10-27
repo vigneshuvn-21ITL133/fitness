@@ -229,17 +229,15 @@ export default function HomeScreen() {
           </Card>
 
           <Card style={styles.growthCard}>
-            <View style={styles.rowBetween}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="trending-up" size={16} color={colors.text} />
-                <Text style={styles.cardTitle}>Growth</Text>
-                <Text style={styles.sampleTag}>Sample</Text>
-              </View>
-              <Text style={styles.smallValue}>
-                {GROWTH.percent}
-                <Text style={styles.smallValueUnit}>%</Text>
-              </Text>
+            <View style={styles.cardHeader}>
+              <Ionicons name="trending-up" size={16} color={colors.text} />
+              <Text style={styles.cardTitle}>Growth</Text>
+              <Text style={styles.sampleTag}>Sample</Text>
             </View>
+            <Text style={[styles.smallValue, { marginTop: spacing.xs }]}>
+              {GROWTH.percent}
+              <Text style={styles.smallValueUnit}>%</Text>
+            </Text>
             <View style={{ marginTop: spacing.md }}>
               <GrowthBars items={GROWTH.months} />
             </View>
@@ -470,6 +468,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 6,
   },
