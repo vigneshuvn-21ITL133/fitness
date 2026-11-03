@@ -1,6 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Pedometer } from 'expo-sensors';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
+
+import { androidStepsBetween, flushAndroidSteps } from '@/lib/androidSteps';
 
 import {
   addRoutePoint,
@@ -23,9 +26,21 @@ import type { ActivitySession, ActivityState, RoutePoint } from '@/types';
 
 const STORAGE_KEY = 'pulse.activity.v1';
 
-/** Reads steps taken between two times from the device pedometer. 0 if unavailable. */
+/**
+ * Steps taken between two times. iOS reads the pedometer directly. Android
+ * uses the app's own step log, which the live step listener fills while a
+ * walk screen is open. 0 if unavailable.
+ */
 export async function stepsBetween(start: number | null, end: number): Promise<number> {
   if (start === null || end <= start) return 0;
+  if (Platform.OS === 'android') {
+    try {
+      await flushAndroidSteps();
+      return await androidStepsBetween(start, end);
+    } catch {
+      return 0;
+    }
+  }
   try {
     const available = await Pedometer.isAvailableAsync();
     if (!available) return 0;

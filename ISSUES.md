@@ -109,3 +109,13 @@ Known limits of the tap count:
 Known limits:
 - Suggestions are rule-based, not a generative AI model. A real AI model needs a server with its own API key, which is not in this app.
 - Past days cannot be backfilled.
+
+## Android step counting fix (implemented)
+
+- [x] Android pedometer rejects date ranges (`getStepCountAsync`). On Android the app keeps its own running step total from the live listener (`src/domain/stepLog.ts`, `src/lib/androidSteps.ts`) and reads today's and walk steps from it. iOS keeps the date-range call.
+- [x] Walk step counts on Android come from the same log instead of silently returning 0
+- [x] Unit tests for the step log: increases, listener restarts, merging close points, retention, range counts
+
+Known limits:
+- Android counts steps only while the app is open. Steps taken while the app is closed are not counted.
+- Not yet run on a device.

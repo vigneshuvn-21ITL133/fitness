@@ -1,8 +1,9 @@
 import { Pedometer } from 'expo-sensors';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { toDateKey } from '@/lib/date';
+import { androidStepsBetween, flushAndroidSteps, recordAndroidReading } from '@/lib/androidSteps';
 
 export type StepSensorStatus =
   | 'checking'
@@ -19,8 +20,13 @@ interface Options {
 
 /**
  * Reads today's steps from the device pedometer and keeps them updated while
- * the app is open. Steps are read from local midnight to now, so the count
+ * the app is open. Steps are counted from local midnight to now, so the count
  * resets at the local day boundary.
+ *
+ * iOS can count steps between two dates directly. Android cannot (the
+ * pedometer rejects date ranges), so on Android the app keeps its own running
+ * total from the live listener and reads today's count from that. Steps taken
+ * while the app is closed are not counted on Android.
  *
  * `canAskAgain` is false once the user has denied motion access and the
  * system will no longer show the prompt. The screen then has to send the user
@@ -32,13 +38,18 @@ export function useStepSensor({ onSteps }: Options) {
   const [canAskAgain, setCanAskAgain] = useState<boolean | null>(null);
   const onStepsRef = useRef(onSteps);
   onStepsRef.current = onSteps;
+  /** Last value from the current Android listener. The listener counts from 0 when it starts. */
+  const androidPrevRaw = useRef(0);
 
   const refresh = useCallback(async () => {
     try {
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const result = await Pedometer.getStepCountAsync(startOfDay, now);
-      onStepsRef.current(toDateKey(now), result.steps);
+      const steps =
+        Platform.OS === 'android'
+          ? await androidStepsBetween(startOfDay.getTime(), now.getTime())
+          : (await Pedometer.getStepCountAsync(startOfDay, now)).steps;
+      onStepsRef.current(toDateKey(now), steps);
       setStatus('ready');
       setLastError(null);
     } catch (err) {
@@ -74,8 +85,19 @@ export function useStepSensor({ onSteps }: Options) {
         }
         const granted = await checkPermission();
         if (cancelled || !granted) return;
-        subscription = Pedometer.watchStepCount(() => {
-          refresh();
+        androidPrevRaw.current = 0;
+        subscription = Pedometer.watchStepCount(({ steps }) => {
+          if (Platform.OS === 'android') {
+            const previous = androidPrevRaw.current;
+            androidPrevRaw.current = steps;
+            recordAndroidReading(steps, previous)
+              .then(() => refresh())
+              .catch(() => {
+                // Next reading or refresh shows any error.
+              });
+          } else {
+            refresh();
+          }
         });
       } catch (err) {
         if (!cancelled) {
@@ -88,6 +110,9 @@ export function useStepSensor({ onSteps }: Options) {
     return () => {
       cancelled = true;
       subscription?.remove();
+      if (Platform.OS === 'android') {
+        flushAndroidSteps().catch(() => {});
+      }
     };
   }, [checkPermission, refresh]);
 
