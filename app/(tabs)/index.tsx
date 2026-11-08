@@ -20,6 +20,7 @@ import { moodGroups } from '@/domain/mood';
 import { kgToDisplay, weightUnitLabel } from '@/domain/units';
 import { addDays, isSameDay, startOfDay, startOfWeek, toDateKey, WEEKDAY_SHORT } from '@/lib/date';
 import { latestWeight } from '@/domain/healthState';
+import { remindersFor } from '@/domain/notifications';
 import { DEFAULT_WEIGHT_KG, sessionDayKey, sessionSteps } from '@/domain/activity';
 import { sessionsNewestFirst } from '@/domain/activityState';
 import { formatDuration, formatKm, formatSessionDate } from '@/domain/format';
@@ -48,7 +49,8 @@ export default function HomeScreen() {
   const greetingName = health.profile?.name?.trim() ?? '';
   const personalInitial = greetingName ? greetingName[0].toUpperCase() : '?';
   const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()));
-  const [notifications, setNotifications] = useState(3);
+  const reminders = useMemo(() => remindersFor(health, moods, new Date()), [health, moods]);
+  const notifications = reminders.length;
 
   const weekDays = useMemo(() => {
     const sunday = startOfWeek(new Date());
@@ -96,7 +98,7 @@ export default function HomeScreen() {
         )}
         <Pressable
           accessibilityLabel={`${notifications} notifications`}
-          onPress={() => setNotifications(0)}
+          onPress={() => router.push('/notifications')}
           style={styles.bellButton}
         >
           <Ionicons name="notifications-outline" size={20} color={colors.text} />

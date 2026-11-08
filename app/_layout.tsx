@@ -47,6 +47,7 @@ function AppShell() {
                 <Stack.Screen name="weight" />
                 <Stack.Screen name="blood-pressure" />
                 <Stack.Screen name="benefits" />
+                <Stack.Screen name="notifications" />
               </Stack>
             </AppGate>
           </ActivityProvider>

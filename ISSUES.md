@@ -119,3 +119,11 @@ Known limits:
 Known limits:
 - Android counts steps only while the app is open. Steps taken while the app is closed are not counted.
 - Not yet run on a device.
+
+## In-app notifications (implemented)
+
+- [x] Bell on Home opens a Notifications screen (`app/notifications.tsx`) instead of clearing a fixed count of 3
+- [x] Reminders come from the user's records (`src/domain/notifications.ts`): today's mood, steps behind goal after 6 pm, no weight in 7 days
+- [x] Badge shows the number of current reminders
+
+Known limit: these are in-app reminders, not phone push notifications. Push needs expo-notifications and a server or EAS push setup.
