@@ -165,6 +165,13 @@ export default function TrackingScreen() {
 
         <Card>
           <Text style={styles.statusText}>{SENSOR_TEXT[sensor.status]}</Text>
+          {sensor.status === 'ready' ? (
+            <Text style={styles.explain}>
+              {sensor.lastReadingAt
+                ? `Last step reading at ${new Date(sensor.lastReadingAt).toLocaleTimeString()}.`
+                : 'No step readings yet. Walk a few steps to test the sensor.'}
+            </Text>
+          ) : null}
           {sensor.status === 'permission-needed' || sensor.status === 'denied' ? (
             <Text style={styles.explain}>
               Motion data is used only to count steps on this device. It is not uploaded.

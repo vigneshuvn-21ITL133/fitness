@@ -40,6 +40,8 @@ export function useStepSensor({ onSteps }: Options) {
   onStepsRef.current = onSteps;
   /** Last value from the current Android listener. The listener counts from 0 when it starts. */
   const androidPrevRaw = useRef(0);
+  /** Time of the last step reading from the live listener, or null if none has arrived yet. */
+  const [lastReadingAt, setLastReadingAt] = useState<number | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -87,6 +89,7 @@ export function useStepSensor({ onSteps }: Options) {
         if (cancelled || !granted) return;
         androidPrevRaw.current = 0;
         subscription = Pedometer.watchStepCount(({ steps }) => {
+          setLastReadingAt(Date.now());
           if (Platform.OS === 'android') {
             const previous = androidPrevRaw.current;
             androidPrevRaw.current = steps;
@@ -154,5 +157,5 @@ export function useStepSensor({ onSteps }: Options) {
     }
   }, [checkPermission]);
 
-  return { status, lastError, canAskAgain, requestPermission, refresh, retry };
+  return { status, lastError, canAskAgain, lastReadingAt, requestPermission, refresh, retry };
 }
